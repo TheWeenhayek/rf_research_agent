@@ -20,6 +20,7 @@ A research workspace (not a software package) for digital predistortion (DPD) of
 - EXP007–008: capture synchronization/alignment diagnostics (coarse decimated search + fine search + complex gain normalization, no external CFO correction).
 - EXP009: the "official" no-DPD reference sweep. It produces `*OFFICIAL_NODPD_REFERENCE*.csv`, which later DPD experiments locate via `findLatestOfficialNoDPDReference` (recursive glob under `data/`) and compare against.
 - EXP010–020: iterative ILA/HILA DPD training with memory polynomial (MP) and GMP models, at an operating point ~0.5 dB into compression of the upconverter. Covers model-size sweeps, reproducibility/restart, generalization to new 5G waveforms, and MP vs GMP fair comparison.
+- EXP031–EXP037: GMP phase (mixed-blend vs bounded-step update), received as a delivery from collaborators. The seven files are the same program differing only in `C.exp`/`C.stage`, so a common change must be applied to all seven. They must run in order and pass results through `data/GMP_EXP031_037/ultima_*.mat`. Full description in `docs/GMP_EXP031_037_LEEME.md`; `C.txGain`/`C.rxGain`/`C.txDSA_dB` at the top of each file are inherited EXP010 values and must be set to the real lab point.
 - EXP103*: upconverter RF-out sweeps with ACE-controlled DSAs.
 
 ## Conventions shared across scripts
