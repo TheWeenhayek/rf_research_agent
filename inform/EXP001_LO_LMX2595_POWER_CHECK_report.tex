@@ -1,0 +1,248 @@
+
+\documentclass[12pt,a4paper]{article}
+
+% ============================================================
+% EXP001 - LO LMX2595 POWER CHECK REPORT
+% DPD V2 experimental campaign
+% ============================================================
+
+\usepackage[spanish,es-tabla]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{array}
+
+\geometry{margin=2.5cm}
+
+\sisetup{
+    detect-all,
+    per-mode=symbol,
+    output-decimal-marker = {.},
+    table-number-alignment = center
+}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue,
+    citecolor=black
+}
+
+\newcommand{\expid}{EXP001}
+\newcommand{\campaign}{DPD V2}
+
+\title{\textbf{\expid: Verificación de potencia de LO con LMX2595}\\
+\large Procedimiento experimental 1 \campaign}
+\author{Juan Pablo Fernández Moncada}
+\date{Medición: 2026-07-09}
+
+\begin{document}
+
+\maketitle
+
+\section{Objetivo}
+
+El objetivo de este experimento fue verificar la potencia entregada por el sintetizador LMX2595 en el punto que alimentará la entrada de oscilador local, LO, del mezclador de upconversion. Esta verificación se realizó antes de continuar con la caracterización de la cadena RF, con el propósito de confirmar que el LO se encuentra dentro de una ventana segura y funcional para el mezclador.
+
+En esta etapa no se utilizó el Pluto SDR ni se transmitió una waveform 5G NR. El experimento se limitó a medir la potencia del LO mediante el detector/medidor de potencia leído por el STM32.
+
+\section{Configuración experimental}
+
+La topología utilizada fue:
+
+\begin{center}
+\begin{tabular}{c}
+\texttt{LMX2595 RFoutA} \\
+$\downarrow$ \\
+\texttt{Atenuador de \SI{3}{dB}} \\
+$\downarrow$ \\
+\texttt{Atenuador de \SI{6}{dB}} \\
+$\downarrow$ \\
+\texttt{Punto de medición / futura entrada LO del mixer} \\
+$\downarrow$ \\
+\texttt{Detector de potencia + STM32}
+\end{tabular}
+\end{center}
+
+La atenuación total entre la salida RFoutA del LMX2595 y el punto de entrada LO del mezclador fue:
+
+\begin{equation}
+A_{\mathrm{LO}} = \SI{3}{dB} + \SI{6}{dB} = \SI{9}{dB}
+\end{equation}
+
+El medidor fue conectado después de esta atenuación de \SI{9}{dB}. Por tanto, la potencia medida corresponde directamente a la potencia que recibirá el pin LO del mezclador:
+
+\begin{equation}
+P_{\mathrm{LO,mixer}} = P_{\mathrm{medida}}
+\end{equation}
+
+La potencia estimada a la salida RFoutA del LMX2595 se calcula como:
+
+\begin{equation}
+P_{\mathrm{LMX2595,RFoutA}} = P_{\mathrm{LO,mixer}} + \SI{9}{dB}
+\end{equation}
+
+\section{Configuración del LMX2595}
+
+La Tabla~\ref{tab:lmx_config} resume la configuración usada para el sintetizador.
+
+\begin{table}[H]
+\centering
+\caption{Configuración principal del LMX2595 durante EXP001.}
+\label{tab:lmx_config}
+\begin{tabular}{ll}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Referencia, $F_{\mathrm{osc}}$ & \SI{100}{MHz} \\
+Frecuencia PFD, $F_{\mathrm{pd}}$ & \SI{200}{MHz} \\
+Frecuencia VCO, $F_{\mathrm{vco}}$ & \SI{10.5}{GHz} \\
+Salida activa & RFoutA \\
+Frecuencia RFoutA & \SI{10.5}{GHz} \\
+RFoutA power setting & 17 \\
+RFoutA habilitado & Sí \\
+RFoutB habilitado & No \\
+Charge pump current & \SI{15}{mA} \\
+Corriente aproximada del dispositivo & \SI{336}{mA} \\
+FCAL\_EN & Activo \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Criterio de aceptación}
+
+El criterio principal fue verificar que la potencia en el punto de entrada LO del mezclador se encuentre dentro de la ventana recomendada:
+
+\begin{equation}
+\SI{-8}{dBm} \leq P_{\mathrm{LO,mixer}} \leq \SI{-4}{dBm}
+\end{equation}
+
+Adicionalmente, se verificó el margen respecto al máximo absoluto de entrada LO:
+
+\begin{equation}
+P_{\mathrm{LO,max}} = \SI{6}{dBm}
+\end{equation}
+
+\section{Resultados experimentales}
+
+La medición se realizó con 100 muestras válidas del STM32. La Tabla~\ref{tab:meas_results} resume las lecturas directas del sensor.
+
+\begin{table}[H]
+\centering
+\caption{Lecturas del detector de potencia.}
+\label{tab:meas_results}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Magnitud} & \textbf{Media} & \textbf{Desv. estándar} & \textbf{Mínimo} & \textbf{Máximo} \\
+\midrule
+Voltaje [V] &
+0.881532 & 0.002587 & 0.877734 & 0.890474 \\
+Voltaje [mV] &
+881.532 & 2.587 & 877.734 & 890.474 \\
+ADC raw &
+17506.42 & 51.38 & 17431 & 17684 \\
+Potencia medida [dBm] &
+-7.2725 & 0.0897 & -7.4040 & -6.9620 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La Tabla~\ref{tab:lo_results} resume la interpretación RF de la medición.
+
+\begin{table}[H]
+\centering
+\caption{Interpretación de potencia en el LO del mezclador y en la salida del LMX2595.}
+\label{tab:lo_results}
+\begin{tabular}{lr}
+\toprule
+\textbf{Parámetro} & \textbf{Valor} \\
+\midrule
+Atenuación física entre LMX2595 y LO del mixer & \SI{9}{dB} \\
+Corrección del medidor & \SI{0}{dB} \\
+Potencia media en el LO del mixer & \SI{-7.2725}{dBm} \\
+Potencia mínima en el LO del mixer & \SI{-7.4040}{dBm} \\
+Potencia máxima en el LO del mixer & \SI{-6.9620}{dBm} \\
+Potencia media estimada en RFoutA del LMX2595 & \SI{1.7275}{dBm} \\
+Potencia mínima estimada en RFoutA del LMX2595 & \SI{1.5960}{dBm} \\
+Potencia máxima estimada en RFoutA del LMX2595 & \SI{2.0380}{dBm} \\
+Margen respecto al máximo absoluto de LO & \SI{12.9620}{dB} \\
+Clase de seguridad & \texttt{INSIDE\_RECOMMENDED\_LO\_DRIVE} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discusión}
+
+La potencia media medida después de los atenuadores fue:
+
+\begin{equation}
+P_{\mathrm{medida}} = \SI{-7.2725}{dBm}
+\end{equation}
+
+Como el medidor está conectado en el mismo punto que alimentará la entrada LO del mezclador, esta potencia corresponde directamente a:
+
+\begin{equation}
+P_{\mathrm{LO,mixer}} = \SI{-7.2725}{dBm}
+\end{equation}
+
+Este valor se encuentra dentro de la ventana recomendada de \SI{-8}{dBm} a \SI{-4}{dBm}. Además, el máximo observado durante la medición fue:
+
+\begin{equation}
+P_{\mathrm{LO,mixer,max}} = \SI{-6.9620}{dBm}
+\end{equation}
+
+Por tanto, incluso el máximo medido permanece dentro de la ventana recomendada. Respecto al máximo absoluto de \SI{6}{dBm}, el margen fue aproximadamente:
+
+\begin{equation}
+M = \SI{12.9620}{dB}
+\end{equation}
+
+La potencia estimada directamente a la salida RFoutA del LMX2595 fue:
+
+\begin{equation}
+P_{\mathrm{LMX2595,RFoutA}} =
+\SI{-7.2725}{dBm} + \SI{9}{dB}
+=
+\SI{1.7275}{dBm}
+\end{equation}
+
+El voltaje medio registrado por el detector fue:
+
+\begin{equation}
+V_{\mathrm{det}} = \SI{881.532}{mV}
+\end{equation}
+
+Este dato se conserva junto con la potencia en dBm para permitir comparación posterior con el software del LTC5596 y para detectar diferencias de calibración entre la conversión usada por el firmware STM32 y la lectura de referencia del software.
+
+\section{Conclusión}
+
+El experimento EXP001 queda validado. Con la configuración actual del LMX2595 y con la red fija de atenuación de \SI{9}{dB}, compuesta por atenuadores de \SI{3}{dB} y \SI{6}{dB}, la potencia que llega al futuro punto de entrada LO del mezclador es:
+
+\begin{equation}
+P_{\mathrm{LO,mixer}} \approx \SI{-7.27}{dBm}
+\end{equation}
+
+Este valor se encuentra dentro de la ventana recomendada de operación de LO, por lo que la cadena puede continuar hacia los siguientes experimentos de caracterización del upconverter y de aislamiento de la compresión del mixer.
+
+\section{Archivos generados}
+
+Los datos de este experimento fueron almacenados en la carpeta:
+
+\begin{center}
+\texttt{data/EXP001\_LO\_LMX2595\_POWER\_CHECK\_v6/20260709\_114016/}
+\end{center}
+
+El archivo usado para este reporte fue:
+
+\begin{center}
+\texttt{EXP001\_LO\_LMX2595\_POWER\_CHECK\_20260709\_114016\_v6\_power\_summary.csv}
+\end{center}
+
+\end{document}
