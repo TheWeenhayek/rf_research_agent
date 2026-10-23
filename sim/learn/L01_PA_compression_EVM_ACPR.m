@@ -78,13 +78,13 @@ plot(f/1e6, 10*log10(p/max(p))); grid on; xlim([-30 30]); ylim([-90 5]);
 xlabel('Frequency (MHz)'); ylabel('PSD (dB, normalized)'); title('Spectrum: flat 20 MHz block');
 subplot(1,3,2);
 histogram(abs(x)/rms(x), 80, 'Normalization','pdf'); grid on;
-xlabel('|x| / RMS'); ylabel('pdf'); title('Amplitude: Rayleigh-like, long tail');
+xlabel('|x| / RMS'); ylabel('pdf'); title('Amplitude (Rayleigh-like)');
 subplot(1,3,3);
 amp = sort(20*log10(abs(x)/rms(x)));
 ccdf = 1 - (1:numel(amp)).'/numel(amp);
 semilogy(amp, ccdf); grid on; xlim([0 papr+1]); ylim([1e-5 1]);
 xlabel('Instantaneous power above average (dB)'); ylabel('P(power > abscissa)');
-title('CCDF: peaks 8-10 dB above RMS are rare but they exist');
+title('CCDF: rare peaks 8-10 dB over RMS');
 
 %% 2. Power sweep: gain, compression, EVM, ACPR -------------------------
 % STEP: scale the same waveform to many RMS levels and push each through the PA.
