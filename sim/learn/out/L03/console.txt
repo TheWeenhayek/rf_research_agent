@@ -1,0 +1,58 @@
+L03 run: 2026-10-23 22:27:13  (MATLAB 26.2.0.3386108 (R2026b))
+
+Operating point: input RMS 0.442 (-7.08 dB re PA saturation), compression 0.50 dB
+
+Capture: max|y_n| = 0.95, max|u| = 1.58 (the PA compresses the peaks, so y_n peaks are lower than u peaks)
+
+PART A: conditioning of the regression matrix X (y_n -> basis)
+  M1K3  Nc =  6   cond(X) = 6.37e+01
+  M3K5  Nc = 20   cond(X) = 2.59e+03
+  M5K6  Nc = 36   cond(X) = 1.58e+04
+  M5K6: median |correlation| between different columns = 0.32, max = 0.989
+
+PART B: validation NMSE (dB) of the post-distorter u ~ f(y_n), lambda = 1e-06, SNR = 38 dB
+        K=      1      2      3      4      5      6      7
+  M=0    -19.6  -22.2  -22.7  -22.8  -22.8  -22.8  -22.8
+  M=1    -21.9  -28.9  -32.3  -33.2  -33.4  -33.4  -33.5
+  M=2    -22.0  -29.4  -33.8  -35.2  -35.6  -35.6  -35.7
+  M=3    -22.1  -29.4  -33.9  -35.2  -35.6  -35.7  -35.7
+  M=4    -22.2  -29.4  -34.0  -35.4  -35.8  -35.9  -36.0
+  M=5    -22.2  -29.5  -34.0  -35.4  -35.8  -35.9  -35.9
+
+  Same three paper models vs observation SNR (validation NMSE, dB):
+    SNR (dB)      M1K3      M3K5      M5K6
+         200     -34.3     -46.0     -47.8
+          50     -34.2     -43.8     -44.9
+          38     -32.3     -35.6     -35.9
+          30     -27.6     -28.4     -28.5
+  (200 dB = noiseless. With noise the big models stop improving: they are noise-limited, not model-limited.)
+
+PART C: ridge regression for M5K6, SNR 38 dB (lambda = lamRel * trace(X'X)/Nc, as in EXP020)
+     lamRel  train NMSE    val NMSE     ||c||  cond(R+lam)
+      1e-10      -35.96      -35.97     12.18     2.48e+08
+      1e-09      -35.96      -35.97     12.05     2.45e+08
+      1e-08      -35.96      -35.96     10.97     2.19e+08
+      1e-07      -35.94      -35.94      5.99     1.06e+08
+      1e-06      -35.91      -35.90      2.32     1.72e+07
+      1e-05      -35.87      -35.84      1.58     1.83e+06
+      1e-04      -35.77      -35.71      1.24     1.85e+05
+      1e-03      -35.45      -35.37      1.14     1.85e+04
+      1e-02      -33.28      -33.20      1.04     1.85e+03
+      1e-01      -25.35      -25.35      0.89     1.86e+02
+      1e+00      -15.27      -15.29      0.68     1.95e+01
+  Paper choice lamRel = 1e-2: costs 2.8 dB of validation NMSE relative to the best value, in exchange for ||c|| 1.0 vs 12.2.
+
+PART D: apply the post-distorter as a pre-distorter in ONE shot (no iterations)
+  Training domain max|y_n| = 0.95, application domain max|u| = 1.58  (4.4 dB higher)
+  No DPD, same drive: EVM 6.15 %, ACPR -27.21 dBc
+
+  case (mu, peak limit)  |  EVM(%) ACPR(dBc)    dPout | EVM(%) eq.   ACPR eq. | real EVM gain (pp)
+  M1K3 mu=0.12 cap=1.5   |    5.49    -28.13    -0.03 |      6.10     -27.28 | 0.62
+  M3K5 mu=0.12 cap=1.5   |    2.19    -35.02    -2.54 |      3.18     -32.36 | 0.99
+  M5K6 mu=0.12 cap=1.5   |    2.28    -33.48    -6.43 |      1.36     -37.38 | -0.92
+  M5K6 mu=0.12 cap=3.0   |    4.13    -30.71    -0.79 |      4.97     -28.94 | 0.84
+  M5K6 mu=1.00 cap=3.0   |   22.93    -14.82   -15.40 |      0.23     -40.08 | -22.70
+  dPout = output power change vs no DPD at the same drive (dB). "eq." = no-DPD at the same output power.
+  The EVM gain that survives against the equal-power reference is the last column; compare with the first columns.
+
+Saved to /MATLAB Drive/rf_research_agent/sim/learn/out/L03
