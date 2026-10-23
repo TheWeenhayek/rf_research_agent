@@ -1,0 +1,198 @@
+{
+  "version": "DPD B3.1",
+  "original_EXP015_identico": true,
+  "baseline_Pluto_identico": true,
+  "EXP016_solo_tasa_y_etiquetas": true,
+  "procedencias": [
+    {
+      "archivo": "code/EXP01_Compresion_cadena_IF.m",
+      "origen": "DPDv3/01_Compresion_opcional/EXP01_Compresion_cadena_IF.m",
+      "cambios": "Rutas locales; configuracion B3.1; fs automatica; pico 0.8; atenuaciones explicitas; publicacion baseline heredada; EXP04 amplia barrido hasta -20 con limites RF originales.",
+      "sha256": "9375bbac586031fac2b7dff7cf891c01aba902185dcdfbde241ce8493dfee1bc"
+    },
+    {
+      "archivo": "code/EXP02_Compresion_upconverter.m",
+      "origen": "DPDv3/01_Compresion_opcional/EXP02_Compresion_upconverter.m",
+      "cambios": "Rutas locales; configuracion B3.1; fs automatica; pico 0.8; atenuaciones explicitas; publicacion baseline heredada; EXP04 amplia barrido hasta -20 con limites RF originales.",
+      "sha256": "2db2bcd6cb6b572ac978dbd9dc93aaf8d4cf30f3c4c4c47a5f3cee78a8000288"
+    },
+    {
+      "archivo": "code/EXP03_Compresion_downconverter.m",
+      "origen": "DPDv3/01_Compresion_opcional/EXP03_Compresion_downconverter.m",
+      "cambios": "Rutas locales; configuracion B3.1; fs automatica; pico 0.8; atenuaciones explicitas; publicacion baseline heredada; EXP04 amplia barrido hasta -20 con limites RF originales.",
+      "sha256": "68f10cee47b3764b00d5b7df3a1f67bc488cb6ae13a61ae3b03e8d5b819f73a5"
+    },
+    {
+      "archivo": "code/EXP04_Observacion_DSA_RX.m",
+      "origen": "DPDv3/01_Compresion_opcional/EXP04_Observacion_DSA_RX.m",
+      "cambios": "Rutas locales; configuracion B3.1; fs automatica; pico 0.8; atenuaciones explicitas; publicacion baseline heredada; EXP04 amplia barrido hasta -20 con limites RF originales.",
+      "sha256": "8ec2cccfa15169cf6ac53fa26ed2a9004769a436d3f962df011affaea5315f8a"
+    },
+    {
+      "archivo": "code/EXP015_GMP_original_punto_configurable.m",
+      "origen": "DPDv2/code/EXP015_Iterative_GMP_DPDV2_DSA5_0p5dB_v1.m",
+      "cambios": "Ganancia TX editable directamente en linea 51, igual que formato original; rutas locales y validacion de procedencia de referencia; algoritmo original intacto.",
+      "sha256": "408d5248e9527a845c371d7146e4fab7fb4955b92dc8a43727e866f8bc3cd392"
+    },
+    {
+      "archivo": "code/EXP016_GMP_original_tasa_61M44.m",
+      "origen": "code/EXP015_GMP_original_punto_configurable.m",
+      "cambios": "Solo tasa explicita 61.44e6 y etiquetas de salida para evitar confusion. ACPR historico observado; cobertura analogica pendiente de verificar.",
+      "sha256": "780b344b716801c806cce3c56deb582ab9aea2da91b0a9adbf2b127364fcc86b"
+    },
+    {
+      "archivo": "code/EXP017_GMP_lambda_delta.m",
+      "origen": "code/EXP016_GMP_original_tasa_61M44.m",
+      "cambios": "Sustituye mezcla por ridge de paso restringido; identidad inicial; escalas congeladas; delta completo; sin normalizacion posterior; guarda propuesta y solver. Rechazo detiene modelo; guarda parametros reales lambdaNuevo/deltaNuevo; pico RX real.",
+      "sha256": "8020917307a4564fe1b19db0100ada9c0c9569ca758601aa194d79293c981ea7"
+    }
+  ],
+  "archivos": [
+    {
+      "path": "baseline/Baseline_Power_Tx_Pluto.csv",
+      "sha256": "409f5e3eaedf7082633afc20c83c0e1e6971bc793f7ae65bd4db5cd37aa5e249"
+    },
+    {
+      "path": "baseline/LEEME_BASELINES.md",
+      "sha256": "18b7343428affe79ecb8c5a5af397b81ed37e63e678cec34d751bfe575b32657"
+    },
+    {
+      "path": "code/configuracion_b31.m",
+      "sha256": "cc2437e5481807d9a26a10cee7e95880088fd47cbd81e5de63e337618d67cf0e"
+    },
+    {
+      "path": "code/EXP015_GMP_original_punto_configurable.m",
+      "sha256": "408d5248e9527a845c371d7146e4fab7fb4955b92dc8a43727e866f8bc3cd392"
+    },
+    {
+      "path": "code/EXP016_GMP_original_tasa_61M44.m",
+      "sha256": "780b344b716801c806cce3c56deb582ab9aea2da91b0a9adbf2b127364fcc86b"
+    },
+    {
+      "path": "code/EXP017_GMP_lambda_delta.m",
+      "sha256": "8020917307a4564fe1b19db0100ada9c0c9569ca758601aa194d79293c981ea7"
+    },
+    {
+      "path": "code/EXP01_Compresion_cadena_IF.m",
+      "sha256": "9375bbac586031fac2b7dff7cf891c01aba902185dcdfbde241ce8493dfee1bc"
+    },
+    {
+      "path": "code/EXP02_Compresion_upconverter.m",
+      "sha256": "2db2bcd6cb6b572ac978dbd9dc93aaf8d4cf30f3c4c4c47a5f3cee78a8000288"
+    },
+    {
+      "path": "code/EXP03_Compresion_downconverter.m",
+      "sha256": "68f10cee47b3764b00d5b7df3a1f67bc488cb6ae13a61ae3b03e8d5b819f73a5"
+    },
+    {
+      "path": "code/EXP04_Observacion_DSA_RX.m",
+      "sha256": "8ec2cccfa15169cf6ac53fa26ed2a9004769a436d3f962df011affaea5315f8a"
+    },
+    {
+      "path": "code/EXP05_EVM_directa.m",
+      "sha256": "680606dadb68c810d34a0504f45eb8b8b9b3c9a2f9a62ebd8a3cfe45effd1799"
+    },
+    {
+      "path": "code/EXP06_EVM_sincronizada_y_punto.m",
+      "sha256": "a4908515192c91c033fcf206e72587e6dc3d73287dcc6984f441c1b4f100fbc0"
+    },
+    {
+      "path": "code/EXP06B_Referencia_sin_DPD_61M44.m",
+      "sha256": "8b876f84e3135039d1991f2950b54372c22d5f04e20181782feb8b726ef21f80"
+    },
+    {
+      "path": "code/funciones/acpr_observado_b31.m",
+      "sha256": "ef968a8da8bdf76c1eca0959b7e7baa55d4919b04bac25c0d5935c9b8c3051e9"
+    },
+    {
+      "path": "code/funciones/formatear_campo_CSV.m",
+      "sha256": "720dae16c8858dacb8c428d6e7fc3d3959e75323b3af4a0cb49215bb3bebb9bc"
+    },
+    {
+      "path": "code/funciones/generar_senal_b31.m",
+      "sha256": "22552173e965e9723509174c71c2348246b7632906fa7983c2c8ee0b7ef3000d"
+    },
+    {
+      "path": "code/funciones/leer_bloque_STM32.m",
+      "sha256": "aee233ea30cc6da49270ca1427552e28b36adc0de3a7fad37ec1afc6169ba40a"
+    },
+    {
+      "path": "code/funciones/medir_EVM_b31.m",
+      "sha256": "2692a6a58c4c16fee989456cde917abd7f187f9636308dbf1acae923892c86b8"
+    },
+    {
+      "path": "code/funciones/medir_potencia_STM32.m",
+      "sha256": "7113d2ad0a3a7aff8737f3e1537868261e4bdc311411d713c50f39c6e3b6bf7a"
+    },
+    {
+      "path": "code/funciones/publicar_baseline.m",
+      "sha256": "d606981d25ab3f16d40bddace5c7a8a6e7f4fdf018ecef53eef39b19e40529b5"
+    },
+    {
+      "path": "code/funciones/reprocesar_ACPR_b31.m",
+      "sha256": "9ea2fc1588c395e2646d65ad883b40d62c8d4847e91ad5d292e07ebab6777c3a"
+    },
+    {
+      "path": "code/funciones/resolver_actualizacion_GMP.m",
+      "sha256": "374653c22fbec65eb9449e9de29c3b3f42f2746857ddae97127cdbab661af47f"
+    },
+    {
+      "path": "code/funciones/robustAlignTxRxForDPD.m",
+      "sha256": "9ddd483ab13e88cd5613c5164bcf868f671e48ae2a94be9e7d83f69a9718dee1"
+    },
+    {
+      "path": "code/funciones/validar_referencia_b31.m",
+      "sha256": "a9cd9ffa9d0cdfc859ab2b8340624c6ff6768aa8293ba49b8fa533920961ca09"
+    },
+    {
+      "path": "code/originales/EXP015_original_sin_cambios.m",
+      "sha256": "822cc85197811ac3dd3f55948f84abd0d20fc3a0ff80ac982269656018fe9f23"
+    },
+    {
+      "path": "code/VALIDAR_OFFLINE_B31.m",
+      "sha256": "e5ddc920d651b43e29795f6a5dd315153082976f26e057fe0ba082755d80a4dc"
+    },
+    {
+      "path": "DIAGNOSTICOS_ACTUALIZACION_PUNTO.csv",
+      "sha256": "2d9d21ace7dc1eb2cb90a28d964c09f9a2e0976905060dc146d70d3139bf12dc"
+    },
+    {
+      "path": "DIAGNOSTICOS_MATLAB.csv",
+      "sha256": "7ce61a94ee20dc3487240393077aae2d2cfe22e0d661cc6aae230eb77bd7e09f"
+    },
+    {
+      "path": "DIFERENCIAS_EXP015.patch",
+      "sha256": "efbf23d679c7f82d49f13401fa159ebe9ea3d62775aa43c279d9995ff46a1b09"
+    },
+    {
+      "path": "DIFERENCIAS_EXP016.patch",
+      "sha256": "6ab4ce043b09eda26e8d3632efbcecb37975604fcf49dfd1a6559a7e91ae9b94"
+    },
+    {
+      "path": "DIFERENCIAS_EXP017.patch",
+      "sha256": "8aee799ceeecb1134c153a3c4c4717e977e6fe91374b57f72eda68445261bcc6"
+    },
+    {
+      "path": "LEEME_PASO_A_PASO.md",
+      "sha256": "c71ddf9a3b80eb56e2af5120b9b1a464cfe5117149fba6a0f2d5a005122153c6"
+    },
+    {
+      "path": "REVISION_FIGURAS_Y_DETECTOR.md",
+      "sha256": "bf8db6dbeec79bbe70cb5a8e21cca435955dc6a245c45f9c35ae2f7564a60aa9"
+    },
+    {
+      "path": "VALIDACION.md",
+      "sha256": "ccefd418965a4f49adc607b20de469a755e48852a4e3bbd5d6e8e12008e69c5e"
+    },
+    {
+      "path": "VALIDACION_ACTUALIZACION_PUNTO.mat",
+      "sha256": "781538bbd133ed67620227be43d5e17ccee222c5d26c16e4998acefaaa0555dc"
+    },
+    {
+      "path": "VALIDACION_OFFLINE.mat",
+      "sha256": "d9994e90beec802ca4f137cdeae76f29cb8aa4f3ccbf8d9517ad26f388624f55"
+    }
+  ],
+  "punto_entrenamiento": "Asignacion fixedTxGain_Pluto en linea 51 de cada EXP015/016/017; sin carga automatica de Punto_operacion.mat",
+  "revision_figuras_y_detector": "Documentacion ampliada; codigo MATLAB intacto. Figuras EXP01-04 y EXP015 contrastadas con DPDv2."
+}

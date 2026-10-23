@@ -1,0 +1,148 @@
+--- EXP016_GMP_original_tasa_61M44.m
++++ EXP017_GMP_lambda_delta.m
+@@ -104,8 +104,10 @@
+ ];
+ 
+ maxHilaIterations = 5;               % 15 iterations/model
+-coeffBlendMu = 0.08;                   % smoother update for GMP candidates
+-regularizationLambdaRel = 5e-2;       % stronger stabilization for correlated GMP bases
++coeffBlendMu = NaN; % No se usa mezcla mu en EXP017.
++configNuevo=configuracion_b31();
++lambdaNuevo=configNuevo.lambdaNuevo; deltaNuevo=configNuevo.deltaNuevo;                   % smoother update for GMP candidates
++regularizationLambdaRel = NaN; % Compatibilidad historica; valor real en lambdaNuevo.
+ minTrainingAmplitudeRatio = 0.08;
+ maxConsecutiveHardFailures = 2;        % do not kill the model after a single bad iteration
+ 
+@@ -199,7 +201,7 @@
+ [plutoOutEstimated_dBm, plutoOutCalibrationMode] = estimatePlutoOutputFromDPDV2Baseline(fixedTxGain_Pluto, baselineDir);
+ 
+ outputRoot = fullfile(dataDir, ...
+-    "EXP016_GMP_HILA_61M44_DPDV2_OFFREF_Tx_" + txTag + "_Rx_" + rxTag + "_" + timeTag);
++    "EXP017_GMP_RESTRINGIDO_LAMBDA_DELTA_Tx_" + txTag + "_Rx_" + rxTag + "_" + timeTag);
+ rawDir       = fullfile(outputRoot, "raw");
+ processedDir = fullfile(outputRoot, "processed");
+ figuresDir   = fullfile(outputRoot, "figures");
+@@ -208,7 +210,7 @@
+         mkdir(d{1});
+     end
+ end
+-baseName = "EXP016_GMP_HILA_61M44_DPDV2_OFFREF_Tx_" + txTag + "_Rx_" + rxTag + "_" + timeTag;
++baseName = "EXP017_GMP_RESTRINGIDO_LAMBDA_DELTA_Tx_" + txTag + "_Rx_" + rxTag + "_" + timeTag;
+ 
+ metricsCsvFile = fullfile(processedDir, baseName + "_iterative_metrics.csv");
+ coeffCsvFile   = fullfile(processedDir, baseName + "_coefficients_long.csv");
+@@ -349,7 +351,7 @@
+ fprintf('Original PAPR           = %.2f dB\n', PAPR_tx_dB);
+ fprintf('Original TX power       = %.2f dBFS rel.\n', txPower_dBFS);
+ fprintf('GMP-HILA iterations/model   = %d\n', maxHilaIterations);
+-fprintf('Coefficient blend mu    = %.3f\n', coeffBlendMu);
++fprintf('Metodo restringido: lambda=%.4g delta=%.4g; sin mezcla mu\n',lambdaNuevo,deltaNuevo);
+ 
+ %% ========================================================================
+ %  EVM CONFIGURATION
+@@ -481,8 +483,10 @@
+     fprintf('MODEL %d/%d: %s\n', iModel, nModels, modelID);
+     fprintf('=================================================================\n');
+ 
+-    coeffPrev = zeros(nCoeff,1);
+-    coeffCurrent = zeros(nCoeff,1);
++    coeffPrev = zeros(nCoeff,1); coeffPrev(1)=1;
++    [basisFrozen,~,~]=buildGMPMatrix(txWaveform,p);
++    frozenScales=max(sqrt(mean(abs(basisFrozen).^2,1)),1e-12); clear basisFrozen;
++    coeffCurrent = coeffPrev;
+     coeffDeltaNorm = 0;
+     noImproveCount = 0;
+     consecutiveHardFailures = 0;
+@@ -565,22 +569,25 @@
+             end
+ 
+             tSolve = tic;
+-            coeffHat = solveRegularizedLS(Xreg, ytrim, regularizationLambdaRel);
+-            lsSolveTime_s = toc(tSolve);
+-
+-            if iter == 1
+-                coeffCurrent = coeffHat;
+-            else
+-                coeffCurrent = (1-coeffBlendMu)*coeffPrev + coeffBlendMu*coeffHat;
++            % Nuevo ajuste restringido en coordenadas normalizadas CONGELADAS.
++            Xscaled=Xreg./frozenScales;
++            previousScaled=coeffPrev.*frozenScales.';
++            [nextScaled,restrictedInfo]=resolver_actualizacion_GMP( ...
++                Xscaled,ytrim,previousScaled,lambdaNuevo,deltaNuevo);
++            coeffCurrent=nextScaled./frozenScales.';
++            lsSolveTime_s=toc(tSolve);
++            coeffDeltaNorm=norm(nextScaled-previousScaled);
++            assert(coeffDeltaNorm<=deltaNuevo*(1+1e-8),'Se excedio delta');
++            tApply=tic;
++            txDPD=applyGMP(txWaveform,coeffCurrent,p);
++            % No reescalar: el radio debe describir los coeficientes emitidos.
++            dpdApplyTime_s=toc(tApply);
++            save(fullfile(processedDir,sprintf('restricted_model_%d_iter_%d.mat',iModel,iter)), ...
++                'restrictedInfo','frozenScales','previousScaled','nextScaled', ...
++                'coeffCurrent','lambdaNuevo','deltaNuevo','txDPD');
++            if any(~isfinite(txDPD)) || max(abs(txDPD))>0.95
++                warning('Propuesta restringida no transmitida: pico TX excedido o no finita'); break;
+             end
+-            coeffDeltaNorm = norm(coeffCurrent - coeffPrev);
+-            coeffPrev = coeffCurrent;
+-
+-            tApply = tic;
+-            txDPD = applyGMP(txWaveform, coeffCurrent, p);
+-            txDPD = normalizeDPDWaveform(txDPD, txWaveform, maxPredistortedPeakRatio);
+-            dpdApplyTime_s = toc(tApply);
+-
+             paprDPD_dB = 10*log10(max(abs(txDPD)).^2 / mean(abs(txDPD).^2));
+             peakRatio = max(abs(txDPD)) / max(abs(txWaveform));
+             paprGuardPass = isfinite(paprDPD_dB) && paprDPD_dB <= (PAPR_tx_dB + maxAllowedDpdPAPR_Extra_dB);
+@@ -695,19 +702,9 @@
+             history.tableRowIDs(end+1) = rowCounter;
+ 
+             if ~post.usable
+-                warning('Capture unusable for %s iteration %d. Keeping previous training source and continuing.', modelID, iter);
+-                metricsRows(rowCounter).PostCaptureAttempts = post.attemptCount;
+-                metricsRows(rowCounter).PostEVMRetryFailed = post.retryFailed;
++                warning('Capture unusable for %s iteration %d. Restricted run stopped.', modelID, iter);
+                 metricsRows(rowCounter).UsableCapture = false;
+-                metricsRows(rowCounter).EarlyStop = false;
+-                consecutiveHardFailures = consecutiveHardFailures + 1;
+-                if consecutiveHardFailures >= maxConsecutiveHardFailures
+-                    warning('Model %s stopped after %d consecutive unusable iterations.', modelID, consecutiveHardFailures);
+-                    break;
+-                end
+-                setSafeState(sdrTransmitter, idleGain_dB);
+-                pause(0.25);
+-                continue;
++                break;
+             end
+             consecutiveHardFailures = 0;
+ 
+@@ -725,7 +722,7 @@
+ 
+             powerGuardPass = metricsRows(rowCounter).RxPower_Delta_dB >= -maxAllowedRxPowerDrop_dB && ...
+                              metricsRows(rowCounter).RxPower_Delta_dB <=  maxAllowedRxPowerRise_dB;
+-            clippingGuardPass = post.rxPower_dBFS < digitalRxSaturationLimit_dBFS;
++            clippingGuardPass = post.peakRx_dBFS < digitalRxSaturationLimit_dBFS;
+             acprImproved = isfinite(post.acpr_dBc) && ((baseline.acpr_dBc - post.acpr_dBc) >= minACPRImprovement_dB);
+             evmValid = isfinite(post.evm_pct) && post.evm_pct < maxAcceptedPostEVM_pct;
+             syncValid = isfinite(post.syncMetric) && post.syncMetric >= minSyncMetric;
+@@ -738,6 +735,11 @@
+                 post.evm_pct, post.acpr_dBc, post.rxPower_dBFS, metricsRows(rowCounter).RxPower_Delta_dB, ...
+                 post.syncMetric, metricsRows(rowCounter).IterationAccepted);
+ 
++            acceptedRestricted=metricsRows(rowCounter).IterationAccepted;
++            save(fullfile(processedDir,sprintf('restricted_acceptance_model_%d_iter_%d.mat',iModel,iter)), ...
++                'acceptedRestricted','metricsRows','rowCounter');
++            if ~acceptedRestricted, break; end
++            coeffPrev=coeffCurrent;
+             % Store coefficients in long format for later inspection/export.
+             for kCoeff = 1:numel(coeffCurrent)
+                 coeffCounter = coeffCounter + 1;
+@@ -1129,7 +1131,7 @@
+     'fixedDsaSteps_Metadata','fixedDsaAtten_dB_Metadata', ...
+     'txWaveform','baseline', ...
+     'gmpModels','maxHilaIterations','coeffBlendMu', ...
+-    'regularizationLambdaRel','minTrainingAmplitudeRatio', ...
++    'regularizationLambdaRel','lambdaNuevo','deltaNuevo','configNuevo','minTrainingAmplitudeRatio', ...
+     'maxPredistortedPeakRatio','maxAllowedDpdPAPR_Extra_dB', ...
+     'maxAllowedRxPowerDrop_dB','maxAllowedRxPowerRise_dB', ...
+     'minSyncMetric','digitalRxSaturationLimit_dBFS', ...

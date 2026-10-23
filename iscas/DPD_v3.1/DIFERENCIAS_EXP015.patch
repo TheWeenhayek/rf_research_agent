@@ -1,0 +1,27 @@
+--- EXP015_Iterative_GMP_DPDV2_DSA5_0p5dB_v1.m
++++ EXP015_GMP_original_punto_configurable.m
+@@ -37,6 +37,7 @@
+ %% ========================================================================
+ 
+ clear; close all; clc;
++addpath(fileparts(mfilename('fullpath')),fullfile(fileparts(mfilename('fullpath')),'funciones'));
+ 
+ %% ========================================================================
+ %  EASY-TO-MODIFY EXPERIMENT CONFIGURATION
+@@ -47,7 +48,7 @@
+ centerFrequency = 5e9;
+ idleGain_dB = -80;
+ 
+-fixedTxGain_Pluto = -22.25;   % approx. 0.5 dB upconverter compression from EXP009F
++fixedTxGain_Pluto = -22.25; % EDITAR AQUI: ganancia TX (dB) del punto de compresion medido.
+ fixedRxGain_Pluto = 8;        % keep same RX gain as EXP009F baseline sweep
+ powerScaleFactor  = 0.8;
+ 
+@@ -329,6 +330,7 @@
+ 
+ [waveform, info] = nrWaveformGenerator(cfgDLFRC);
+ sampleRate = info.ResourceGrids(1).Info.SampleRate;
++validar_referencia_b31(noDPDReferenceCsv,sampleRate);
+ 
+ txWaveform = waveform * (powerScaleFactor / max(abs(waveform)));
+ txWaveform = txWaveform(:);

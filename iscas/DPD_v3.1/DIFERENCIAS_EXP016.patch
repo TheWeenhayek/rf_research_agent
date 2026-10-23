@@ -1,0 +1,29 @@
+--- EXP015_GMP_original_punto_configurable.m
++++ EXP016_GMP_original_tasa_61M44.m
+@@ -199,7 +199,7 @@
+ [plutoOutEstimated_dBm, plutoOutCalibrationMode] = estimatePlutoOutputFromDPDV2Baseline(fixedTxGain_Pluto, baselineDir);
+ 
+ outputRoot = fullfile(dataDir, ...
+-    "EXP015_GMP_HILA_0p5DBCOMP_DPDV2_OFFREF_Tx_" + txTag + "_Rx_" + rxTag + "_" + timeTag);
++    "EXP016_GMP_HILA_61M44_DPDV2_OFFREF_Tx_" + txTag + "_Rx_" + rxTag + "_" + timeTag);
+ rawDir       = fullfile(outputRoot, "raw");
+ processedDir = fullfile(outputRoot, "processed");
+ figuresDir   = fullfile(outputRoot, "figures");
+@@ -208,7 +208,7 @@
+         mkdir(d{1});
+     end
+ end
+-baseName = "EXP015_GMP_HILA_0p5DBCOMP_DPDV2_OFFREF_Tx_" + txTag + "_Rx_" + rxTag + "_" + timeTag;
++baseName = "EXP016_GMP_HILA_61M44_DPDV2_OFFREF_Tx_" + txTag + "_Rx_" + rxTag + "_" + timeTag;
+ 
+ metricsCsvFile = fullfile(processedDir, baseName + "_iterative_metrics.csv");
+ coeffCsvFile   = fullfile(processedDir, baseName + "_coefficients_long.csv");
+@@ -230,7 +230,7 @@
+ cfgDLFRC.InitialNSubframe = 0;
+ cfgDLFRC.WindowingPercent = 0;
+ cfgDLFRC.CarrierFrequency = 0;
+-cfgDLFRC.SampleRate = [];   % Keep auto sample rate, as in EXP009 (typically 30.72 Msps).
++cfgDLFRC.SampleRate = 61.44e6; % EXP016: unico cambio experimental frente a EXP015.
+ 
+ scs = nrSCSCarrierConfig;
+ scs.SubcarrierSpacing = 30;

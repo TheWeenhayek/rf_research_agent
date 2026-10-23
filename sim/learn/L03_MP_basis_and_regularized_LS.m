@@ -178,7 +178,7 @@ fprintf('  The EVM gain that survives against the equal-power reference is the l
 
 figure('Name','L03-4 One-shot DPD','Position',[40 40 1300 800]);
 subplot(2,2,1); histogram(abs(yna), 60, 'Normalization', 'pdf'); hold on; histogram(abs(ua), 60, 'Normalization', 'pdf'); grid on;
-xline(max(abs(yna)), 'b--', 'max |y_n|'); xline(max(abs(ua)), 'r--', 'max |u|'); legend('|y_n| (training)', '|u| (application)');
+xline(max(abs(yna)), 'b--'); xline(max(abs(ua)), 'r--'); legend('|y_n| (training)', '|u| (application)', 'max |y_n|', 'max |u|');
 xlabel('amplitude'); title('Training domain vs application domain');
 subplot(2,2,2); aa = linspace(0.02, 1.8, 200).'; hold on;
 for r = 1:3
@@ -192,10 +192,10 @@ subplot(2,2,3); bar(1:nCase, [R(:,6) R(:,1) R(:,4)]); grid on; ylabel('EVM (%)')
 xticks(1:nCase); xticklabels(labels); xtickangle(20); set(gca, 'TickLabelInterpreter', 'none');
 legend('no DPD, same drive', 'DPD', 'no DPD, same output power', 'Location', 'northwest'); title('The honest comparison is the 3rd bar');
 subplot(2,2,4); [p0, f] = pwelch(y0, hamming(4096), [], 8192, cfg.fs, 'centered'); hold on;
-plot(f/1e6, 10*log10(p0/max(p0)), 'k');
+plot(f/1e6, 10*log10(p0/max(p0)), 'k');                 % both spectra use the no-DPD peak as 0 dB
 cBest = fitMP(yna, ua, 5, 6, lamPaper, minAmpRatio, nRowsMax); zB = predistort(ub, cBest, 5, 6, muPaper, 1.5); [pB, f] = pwelch(simulatedPA(zB), hamming(4096), [], 8192, cfg.fs, 'centered');
-plot(f/1e6, 10*log10(pB/max(pB)), 'r'); grid on; xlim([-30 30]); ylim([-90 5]); legend('no DPD', 'M5K6 one-shot, mu 0.12');
-xlabel('MHz'); ylabel('PSD (dB)'); title('Spectrum: looks better, but the power also dropped');
+plot(f/1e6, 10*log10(pB/max(p0)), 'r'); grid on; xlim([-30 30]); ylim([-90 5]); legend('no DPD', 'M5K6 one-shot, mu 0.12');
+xlabel('MHz'); ylabel('PSD (dB re no-DPD peak)'); title('Same reference: shoulders lower, but in-band power also dropped');
 
 %% 7. Save ---------------------------------------------------------------
 writetable(table(repelem(Mgrid(:), numel(Kgrid)), repmat(Kgrid(:), numel(Mgrid), 1), reshape(NC', [], 1), reshape(NM', [], 1), ...

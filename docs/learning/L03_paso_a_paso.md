@@ -26,9 +26,10 @@ Los números de abajo vienen de un port numérico con otra semilla: espera valor
 
 - **Panel izquierdo:** las funciones base de un solo retardo. Todas "crecen" de forma parecida con |x|, solo con distinta pendiente.
 - **Panel central:** correlación entre las 36 columnas de M5K6. Se espera una diagonal ancha de valores altos: órdenes vecinos (k, k+1) en el mismo retardo tienen |corr| de 0.88 a 0.99 (los de orden alto casi iguales), y el mismo orden en retardos vecinos ≈ 0.8, porque una señal de banda limitada cambia poco de una muestra a la siguiente. La mediana entre todas las parejas es ≈ 0.33, así que el problema está concentrado junto a la diagonal.
-- **Panel derecho:** los valores singulares de X, normalizados. Cuanto más se despliegan, peor el condicionamiento.
+- **Panel derecho:** los valores singulares de X, normalizados. Cuanto más se despliegan, peor el condicionamiento. En la corrida real se ven escalones: cada orden k aporta M+1 copias retardadas casi iguales, y esas copias casi no añaden información nueva (interpretación probable, no verificada).
+- **Panel central, en la corrida real:** se ven 6 bloques de 6×6 sobre la diagonal (uno por retardo m). Dentro de cada bloque, vecinos de orden k están casi pegados (≈ 0.9–1.0). Los bloques vecinos (retardos consecutivos) también correlacionan (≈ 0.7–0.8) y los lejanos casi no.
 
-**Consola (aprox.):** cond(X) ≈ 6×10¹ (M1K3, 6 coef.), 2.6×10³ (M3K5, 20), 1.6×10⁴ (M5K6, 36).
+**Consola (corrida real):** cond(X) = 6.4×10¹ (M1K3, 6 coef.), 2.6×10³ (M3K5, 20), 1.6×10⁴ (M5K6, 36). Mediana de |corr| entre columnas distintas: 0.32; máxima: 0.989.
 
 **Qué enseña:** cada coeficiente nuevo entra casi colineal con los anteriores. Sin regularizar, el ruido se amplifica por esas direcciones casi planas. Por eso el paper usa Tikhonov (Ec. 5) en lugar de LS puro.
 
@@ -51,7 +52,12 @@ Los números de abajo vienen de un port numérico con otra semilla: espera valor
 | 38 | ≈ −32.5 | ≈ −35.7 | ≈ −36.0 |
 | 30 | ≈ −27.7 | ≈ −28.4 | ≈ −28.6 |
 
-**Qué enseña:** con SNR realista (38 dB) M3K5 y M5K6 quedan casi iguales, y a 30 dB ni siquiera M1K3 se distingue. El piso lo pone el ruido de la captura, no el modelo. Es la explicación de la Tabla II del paper: "agregar coeficientes no dio mejora monótona". Sin ruido, en cambio, el modelo grande sí gana ≈ 14 dB sobre el pequeño.
+**Corrida real (M1K3 / M3K5 / M5K6):** 200 dB → −34.3 / −46.0 / −47.8; 50 dB → −34.2 / −43.8 / −44.9; 38 dB → −32.3 / −35.6 / −35.9; 30 dB → −27.6 / −28.4 / −28.5. En el mapa M×K con SNR 38: la memoria aporta sobre todo al pasar de M = 0 (−23) a M = 1 (−33) y a M = 2 (−35.6); desde M = 2 no cambia nada. El orden satura en K ≈ 5.
+
+**Qué enseña — dos regímenes:**
+- **Limitado por el modelo (M1K3):** da ≈ −34 dB con SNR de 200 o de 50 dB. El ruido solo lo empeora cuando baja de ~40 dB. Su límite es que le faltan términos.
+- **Limitado por el ruido (M3K5, M5K6):** con SNR 38 dB quedan casi iguales (≈ −36 dB, parecido a −SNR). A 30 dB ya ni M1K3 se distingue. Sin ruido, en cambio, el modelo grande gana ≈ 14 dB sobre el pequeño.
+- Es la explicación de la Tabla II del paper: "agregar coeficientes no dio mejora monótona" (M1K3: 2.83 % de EVM; M5K6: 2.86 %). La simulación no demuestra el mecanismo real del laboratorio, pero es una explicación coherente.
 
 **Laboratorio:** antes de probar un modelo mayor, estima la SNR de tus capturas. Si el NMSE de validación ya está cerca de −SNR, un modelo más grande no va a ayudar.
 
@@ -59,16 +65,18 @@ Los números de abajo vienen de un port numérico con otra semilla: espera valor
 
 **Qué hace:** para M5K6 barre λ_rel de 10⁻¹⁰ a 1 y mide NMSE de entrenamiento y validación, ‖c‖ y el número de condición de (R + λI).
 
-**Consola (aprox., M5K6, SNR 38):**
+**Consola (corrida real, M5K6, SNR 38):**
 
-| λ_rel | NMSE val (dB) | ‖c‖ |
-|---|---|---|
-| 10⁻¹⁰ | −36.0 | 13.9 |
-| 10⁻⁶ | −36.0 | 2.4 |
-| 10⁻³ | −35.6 | 1.1 |
-| 10⁻² | −33.4 | 1.04 |
-| 10⁻¹ | −25.3 | 0.89 |
-| 1 | −15.3 | 0.68 |
+| λ_rel | NMSE val (dB) | ‖c‖ | cond(R+λI) |
+|---|---|---|---|
+| 10⁻¹⁰ | −36.0 | 12.2 | 2.5×10⁸ |
+| 10⁻⁶ | −35.9 | 2.3 | 1.7×10⁷ |
+| 10⁻³ | −35.4 | 1.1 | 1.9×10⁴ |
+| 10⁻² | −33.2 | 1.04 | 1.9×10³ |
+| 10⁻¹ | −25.4 | 0.89 | 1.9×10² |
+| 1 | −15.3 | 0.68 | 20 |
+
+**Detalle importante:** el NMSE de entrenamiento y el de validación son casi iguales en todos los λ. Con decenas de miles de muestras y solo 36 coeficientes **no hay sobreajuste**; lo que controla λ es la amplificación del ruido por las direcciones casi planas (‖c‖ y condicionamiento), no el sobreajuste clásico. Con menos muestras o más coeficientes (como en EXP032, con ≤ 60 000 filas) la historia podría cambiar; esta simulación no lo prueba.
 
 **Cómo leerlo:**
 - **Meseta (λ ≤ 10⁻⁴):** el NMSE no cambia, pero ‖c‖ baja de ≈ 14 a ≈ 1.2. Es decir, mismos resultados con coeficientes mucho más pequeños y estables, que es lo que la regularización compra.
@@ -83,26 +91,29 @@ Los números de abajo vienen de un port numérico con otra semilla: espera valor
 
 **Panel superior izquierdo (dominios):** el modelo se entrenó con `|y_n|` hasta ≈ 0.94, pero ahora se evalúa con `|u|` hasta ≈ 1.48 (~4 dB más). El predistorter nunca "vio" esos picos.
 
-**Panel superior derecho (f(a)):** dentro del rango de entrenamiento las curvas son razonables. Fuera, la zona rosada, los polinomios de orden alto se disparan: M5K6 llega a ≈ 38 en a = 1.6, y M1K3 a ≈ 5.
+**Panel superior izquierdo, en la corrida real:** los histogramas de `|y_n|` y `|u|` casi se superponen en el cuerpo; solo difiere la cola, donde `|u|` llega a 1.58 y `|y_n|` a 0.95.
 
-**Consola (aprox.):** sin DPD y mismo drive, EVM 6.1 %, ACPR −27.3 dBc.
+**Panel superior derecho (f(a)):** hasta ≈ 0.95 (línea azul vertical) las tres curvas se parecen y suben por encima de la identidad (f(0.95) ≈ 1.3, una expansión de ≈ 2.7 dB, que es justo lo que compensa la compresión). Después de 0.95, zona rosada, los polinomios de orden alto se disparan: M3K5 y M5K6 pasan de 5 antes de a = 1.4, y M1K3 sube más suave.
+
+**Consola (corrida real):** sin DPD y mismo drive, EVM 6.15 %, ACPR −27.21 dBc.
 
 | Caso (µ, límite de pico) | EVM DPD | ACPR DPD | ΔPout | EVM no-DPD, igual potencia | Ganancia real EVM |
 |---|---|---|---|---|---|
-| M1K3, 0.12, 1.5 | 5.5 | −28.2 | −0.0 | 6.1 | 0.6 pp |
-| M3K5, 0.12, 1.5 | 2.9 | −33.3 | −1.8 | 3.8 | 1.0 pp |
-| M5K6, 0.12, 1.5 | 1.75 | −35.2 | **−5.1** | 1.78 | **≈ 0** |
-| M5K6, 0.12, 3.0 | 5.3 | −28.8 | −0.1 | 6.0 | 0.7 pp |
-| M5K6, **1.0**, 3.0 | 19.9 | −16.0 | −13.6 | — | **empeora mucho** |
+| M1K3, 0.12, 1.5 | 5.49 | −28.13 | −0.03 | 6.10 | +0.62 pp |
+| M3K5, 0.12, 1.5 | 2.19 | −35.02 | −2.54 | 3.18 | +0.99 pp |
+| M5K6, 0.12, 1.5 | 2.28 | −33.48 | **−6.43** | 1.36 | **−0.92 pp** |
+| M5K6, 0.12, 3.0 | 4.13 | −30.71 | −0.79 | 4.97 | +0.84 pp |
+| M5K6, **1.0**, 3.0 | 22.93 | −14.82 | −15.40 | 0.23 | **−22.7 pp** |
 
 **Qué enseña (tres cosas):**
-1. **Un disparo de ILA con µ = 1 explota** (EVM 19.9 %). El postdistorter no sabe qué hacer con picos que no vio. Por eso el paper usa µ = 0.12 y **itera**: cada iteración extiende un poco el dominio. Esa es la L04.
-2. **La mejora aparente puede ser retroceso de potencia.** El M5K6 con µ = 0.12 parece espectacular (EVM 1.75 %, ACPR −35 dBc), pero la salida bajó 5.1 dB. Un no-DPD a esa misma potencia da EVM 1.78 %: la ganancia real es ≈ 0. El límite de pico recorta y reescala la señal. Es exactamente el problema del paper ("el DPD redujo la potencia promedio más de 2 dB; la referencia a igual potencia es estrictamente necesaria"), y el tema de L06.
-3. **Una mejora real pero modesta** (0.6–1.0 pp) aparece cuando el recorte no domina.
+1. **Un disparo de ILA con µ = 1 explota** (EVM 22.9 %). El postdistorter no sabe qué hacer con picos que no vio. Por eso el paper usa µ = 0.12 y **itera**: cada iteración extiende un poco el dominio. Esa es la L04.
+2. **La mejora aparente puede ser retroceso de potencia, e incluso engañar al revés.** El M5K6 con µ = 0.12 y límite 1.5 parece bueno (EVM 6.15 → 2.28 %, ACPR −27 → −33.5 dBc), pero la salida bajó 6.4 dB. Un no-DPD con la misma potencia de salida da 1.36 %: el "DPD" queda **peor** que simplemente bajar la potencia. El límite de pico recorta y reescala la señal. Es el problema que el paper señala ("el DPD redujo la potencia promedio más de 2 dB; la referencia a igual potencia es estrictamente necesaria"), y el tema de L06.
+3. **Una mejora real pero modesta** (0.6–1.0 pp de EVM) aparece cuando el recorte no domina.
+4. Contraste con el paper: allí la mejora de EVM casi no cambia entre "mismo TX gain" (3.82 pp) y "igual potencia" (3.06–3.50 pp), mientras que el ACPR pasa de 4.3 dB a 1.0–1.45 dB. Es decir, su DPD sí ganó EVM de verdad, y lo que se encoge al igualar potencia es sobre todo el ACPR. En este disparo único simulado ocurre lo contrario, porque aún no hay iteraciones.
 
-**Panel inferior izquierdo:** tres barras por caso (no-DPD mismo drive, DPD y no-DPD igual potencia). **La comparación honesta es la tercera barra.**
+**Panel inferior izquierdo:** tres barras por caso (no-DPD mismo drive, DPD y no-DPD igual potencia). **La comparación honesta es la tercera barra.** En M5K6 µ = 0.12 límite 1.5 la barra amarilla es más baja que la naranja.
 
-**Panel inferior derecho:** el espectro mejora, pero la bajada de potencia explica parte de eso.
+**Panel inferior derecho:** espectros con la misma referencia (0 dB = pico del no-DPD). Los hombros bajan unos 8 dB, pero la meseta principal también baja: la potencia de banda cayó.
 
 ## Qué te llevas al laboratorio
 
