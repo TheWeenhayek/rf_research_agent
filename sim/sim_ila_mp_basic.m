@@ -20,7 +20,7 @@ coeffBlendMu = 0.5;            % 1 = replace coefficients every iteration
 lambdaRel = 1e-2;
 minAmpRatio = 0.08;
 maxPeakRatio = 1.5;
-inputRms = 0.35;               % sets how far into compression the PA runs
+inputRms = 0.45;               % sets how far into compression the PA runs
 
 %% 5G-like OFDM test signal (15 kHz SCS, 600 active subcarriers, 4x oversampled)
 nfft = 4096; nActive = 600; nSym = 40; scs = 15e3;
@@ -32,7 +32,16 @@ for s = 1:nSym
     S(idx) = (sign(randn(nActive,1)) + 1j*sign(randn(nActive,1)))/sqrt(2);
     x = [x; ifft(S)*sqrt(nfft)]; %#ok<AGROW>
 end
+% Symbols are concatenated without CP/windowing, which leaves sinc skirts at
+% about -24 dBc in the adjacent bands. Remove them (circular brick-wall filter)
+% so that the ACPR floor of the input does not hide the PA distortion.
+Xf = fft(x);
+fAxis = (0:numel(x)-1).'/numel(x)*fs;
+fAxis(fAxis >= fs/2) = fAxis(fAxis >= fs/2) - fs;
+Xf(abs(fAxis) > 0.55*bw) = 0;
+x = ifft(Xf);
 x = x / sqrt(mean(abs(x).^2)) * inputRms;
+fprintf('ACPR of the input signal itself: %.1f dBc\n', computeACPRCentered(x, fs, bw));
 fprintf('Samples: %d, fs = %.2f MHz, bw = %.2f MHz, PAPR = %.1f dB\n', ...
     numel(x), fs/1e6, bw/1e6, 20*log10(max(abs(x))/rms(x)));
 
