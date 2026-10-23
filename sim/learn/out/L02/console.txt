@@ -1,0 +1,39 @@
+L02 run: 2026-10-23 21:00:48  (MATLAB 26.2.0.3386108 (R2026b))
+
+PAPR = 11.5 dB
+Calibration: IF Psat = 3.83 dBm, upconverter Psat = 16.93 dBm, RX constant K = -11.83 dB
+Check: upconverter C at TX -22.25 = 0.50 dB, at -19.8 = 1.03 dB (paper P1dB: -19.78)
+
+Part A: stage-wise results (TxGain at which C reaches 1 dB, "none" = not reached in -44..-6 dB)
+  Block         Gss(dB)   TX@1dB est  TX@1dB true   C@-22.25 est  C@-22.25 true
+  IF board        21.05        -13.2        -12.8           0.26           0.03
+  Upconverter     20.78        -20.2        -19.9           0.49           0.50
+  Downconv.        8.00         none         none           0.08           0.00
+  Paper Table I: upconverter P1dB at TX -19.78 dB, C = 0.50 dB at -22.25 dB; IF block "not reached"; downconverter "not reached".
+  NOTE: Baseline_Power_IF_Board.csv reaches 1 dB at TX -11 dB, i.e. inside the swept range. Open question vs Table I.
+
+Power budget at TX = -22.25 dB (average power, dBm):
+  Pluto out              -30.24
+  IF board out            -9.47
+  Upconv. RF_OUT pin      10.83
+  After filter             7.83
+  Downconv. RF_IN        -22.17
+  IF back (meter)        -14.17
+  RX level: -18.0 dBFS rms, -11.5 dBFS peak at RX gain 8 dB
+
+Part B: EVM map 31 TX x 13 RX points
+  Minimum EVM among accepted captures (peak < -3 dBFS): 0.78 % at TX -36 dB, RX 24 dB   (Lagrava: 1.27 %, Moncada: ~1.2 %)
+  Nominal DPD point (TX -22, RX 8): EVM = 6.86 %, peak -11.5 dBFS  (paper no-DPD: 6.47 %)
+
+  Best accepted RX per TX (the "best-rx-per-tx" table of EXP006):
+      TX     RX    EVM(%)   C_up(dB)
+     -40     24      1.00       0.00
+     -36     24      0.78       0.00
+     -32     20      1.09       0.01
+     -28     16      1.96       0.06
+     -24     16      4.39       0.27
+     -20     16     10.14       0.97
+     -16     16     18.41       2.34
+     -12     16     26.29       4.01
+
+Saved to /MATLAB Drive/rf_research_agent/sim/learn/out/L02
