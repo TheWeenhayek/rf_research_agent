@@ -172,7 +172,7 @@ plot(txA, cIFt, 'b-'); plot(txA, cUpt, 'r-'); plot(txA, cDnt, 'g-');
 yline(1, '--k', '1 dB'); xline(par.nominalTX, ':k', 'DPD point'); grid on; ylim([-1 4]);
 xlabel('Pluto TxGain (dB)'); ylabel('Compression C = G_{ss} - G (dB)'); title('Paper Fig. 2: only the upconverter compresses at the DPD point');
 subplot(2,2,4);
-plot(1:numel(budget), budget, 'o-', 'LineWidth', 1.4); grid on; xticks(1:numel(budget)); xticklabels(bNames); xtickangle(25);
+plot(1:numel(budget), budget, 'o-', 'LineWidth', 1.4); grid on; xticks(1:numel(budget)); xticklabels(bNames); xtickangle(25); set(gca, 'TickLabelInterpreter', 'none');
 ylabel('Average power (dBm)'); title(sprintf('Power budget at TX = %.2f dB', par.nominalTX));
 
 %% PART B ---------------------------------------------------------------
@@ -214,7 +214,7 @@ plot(par.nominalTX, par.nominalRX, 'ks', 'MarkerFaceColor', 'y', 'MarkerSize', 9
 text(-39, 3, 'noise', 'Color', 'w', 'FontWeight', 'bold'); text(-17, 4, 'compression', 'Color', 'w', 'FontWeight', 'bold');
 text(-30, 22.5, 'RX clipping', 'Color', 'w', 'FontWeight', 'bold');
 xlabel('Pluto TX gain (dB)'); ylabel('Pluto RX gain (dB)');
-title('EVM (%) map. white dashed: peak = -3 dBFS, red: clipping; star = min, square = DPD point');
+title({'EVM (%) map', 'white dashed: peak = -3 dBFS, red: clipping; star = min, square = DPD point'});
 subplot(2,2,2);
 yyaxis left; plot(txB, EVM(iN,:), 'o-', txB, EVM(find(rxB==16,1),:), 's-'); ylabel('EVM (%)'); set(gca, 'YScale', 'log');
 yline(3.5, '--', '3.5 %'); yyaxis right; plot(txB, CUP, 'k:', 'LineWidth', 1.5); ylabel('Upconverter compression (dB)');
