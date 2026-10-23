@@ -1,0 +1,25 @@
+L01 run: 2026-10-23 20:36:21  (MATLAB 26.2.0.3386108 (R2026b))
+
+Signal: 131520 samples, fs = 61.44 MS/s, occupied BW = 18.36 MHz
+PAPR = 11.1 dB   (paper: ~11.3 dB)
+ACPR of the input itself = -40.4 dBc   (floor: nothing below this can be measured)
+EVM of the input vs itself = 0.000 %   (must be ~0: sanity check of the demodulator)
+
+Small-signal gain Gss = 1.44 dB
+Input-referred P1dB (average-power sense) = -4.91 dB re 1.0
+
+  C (dB)   drive (dB)   EVM (%)   ACPR (dBc)
+   0.10     -11.26        2.37      -34.51
+   0.50      -7.09        6.11      -27.30
+   1.50      -3.45       12.72      -21.13
+
+Reference, paper at ~0.5 dB compression: EVM 6.47 %, ACPR -26.57 dBc (no DPD).
+
+WHAT TO CHECK
+ 1. Fig 2: EVM ~ 0 and C ~ 0 at low drive; both rise once the peaks reach the knee of the PA.
+ 2. Fig 2: at C = 0.5 dB, EVM is already several % -> far above the 3.5 % limit; that is why DPD is needed
+    even with "only" 0.5 dB of compression (the paper operating point).
+ 3. Fig 3: AM/AM scatter bends below the dashed line only at large |input|; scatter width = memory.
+ 4. Fig 4: shoulders appear next to the main block and grow with drive.
+
+Saved to /MATLAB Drive/rf_research_agent/sim/learn/out/L01
