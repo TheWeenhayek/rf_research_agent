@@ -21,6 +21,18 @@
 clear; close all; clc;
 rng(7);
 
+% Outputs go to sim/learn/out/L01/ (console.txt, figures/*.png, *.csv) so that
+% after a run you can commit + push them and they can be reviewed from the repo.
+moduleName = 'L01';
+scriptDir = fileparts(mfilename('fullpath'));
+if isempty(scriptDir), scriptDir = pwd; end
+outDir = fullfile(scriptDir, 'out', moduleName);
+figDir = fullfile(outDir, 'figures');
+if ~exist(figDir, 'dir'), mkdir(figDir); end
+delete(fullfile(figDir, '*.png'));                 % keep only the latest run
+diary off; diary(fullfile(outDir, 'console.txt'));  % everything printed below is logged
+fprintf('%s run: %s  (MATLAB %s)\n\n', moduleName, datestr(now,'yyyy-mm-dd HH:MM:SS'), version);
+
 %% 0. Configuration ------------------------------------------------------
 cfg.nfft    = 2048;            % FFT size. 2048 * 30 kHz = 61.44 MS/s (rate fixed in EXP031-037)
 cfg.scs     = 30e3;            % subcarrier spacing (paper: 30 kHz)
@@ -179,7 +191,33 @@ fprintf('    even with "only" 0.5 dB of compression (the paper operating point).
 fprintf(' 3. Fig 3: AM/AM scatter bends below the dashed line only at large |input|; scatter width = memory.\n');
 fprintf(' 4. Fig 4: shoulders appear next to the main block and grow with drive.\n');
 
+%% 6. Save outputs --------------------------------------------------------
+sweepTable = table(levelsDB, Pin, Pout, G, C, evm, acpr, ...
+    'VariableNames', {'Drive_dB','Pin_dB','Pout_dB','Gain_dB','Compression_dB','EVM_pct','ACPR_dBc'});
+writetable(sweepTable, fullfile(outDir, 'sweep.csv'));
+opTable = table(Cgrid(:), levAt(:), interp1(Pin, evm, levAt(:)), interp1(Pin, acpr, levAt(:)), ...
+    'VariableNames', {'Compression_dB','Drive_dB','EVM_pct','ACPR_dBc'});
+writetable(opTable, fullfile(outDir, 'operating_points.csv'));
+saveAllFigures(figDir);
+fprintf('\nSaved to %s\n', outDir);
+diary off;
+
 %% ===================== Local functions =================================
+function saveAllFigures(figDir)
+    % One PNG per open figure, named after its 'Name' property.
+    figs = findall(groot, 'Type', 'figure');
+    for k = 1:numel(figs)
+        nm = regexprep(figs(k).Name, '[^\w-]+', '_');
+        if isempty(nm), nm = sprintf('figure_%d', figs(k).Number); end
+        fn = fullfile(figDir, [nm '.png']);
+        try
+            exportgraphics(figs(k), fn, 'Resolution', 130);
+        catch
+            saveas(figs(k), fn);
+        end
+    end
+end
+
 function [x, S] = generateOFDM(cfg)
     lv = -15:2:15;                                  % 256-QAM levels per axis
     S  = (lv(randi(16, cfg.nActive, cfg.nSym)) + 1j*lv(randi(16, cfg.nActive, cfg.nSym))) / sqrt(170);

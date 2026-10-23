@@ -2,6 +2,12 @@
 
 Newest first. Each entry: date, decision, why.
 
+## 2026-10-23: Tutorial scripts export their outputs to the repo
+
+- **Decision:** Each `sim/learn/L0N_*.m` saves `console.txt`, `figures/*.png` and CSV tables under `sim/learn/out/L0N/`, and the folder is committed.
+- **Why:** The scripts run in MATLAB Online, which Claude Code cannot see. Pushing the outputs lets Claude review the plots and numbers.
+- **How to apply:** New modules copy the output block of L01 (setup after `rng`, `saveAllFigures` helper at the end). Keep PNGs at about 130 dpi and do not save raw waveforms.
+
 ## 2026-10-17: Offline testing runs on MATLAB Online, not locally
 
 - **Decision:** Offline/simulation work is written as plain MATLAB scripts and functions in new folders (`sim/`, later `lib/`), never by editing the accepted-paper scripts in `code/`. The user runs them in MATLAB Online.
