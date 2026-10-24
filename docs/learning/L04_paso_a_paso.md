@@ -3,7 +3,7 @@
 Script: `sim/learn/L04_ILA_loop_blending_and_selection.m`. Salidas en `sim/learn/out/L04/`.
 Corresponde a la Ec. 6, la Fig. 4 y la Tabla II del paper, y al lazo de `code/EXP010–EXP020`.
 
-Los números de abajo vienen de un port numérico con otra semilla; sirven de guía, no de resultado. Compara con tu corrida y dime las diferencias.
+Los números de las Partes A–D son de la corrida real en MATLAB Online (2026-10-23). Los del diseño 2×2 de la Parte E vienen de un port numérico con otra semilla, pendientes de confirmar con una nueva corrida del script.
 
 ## El lazo en cinco pasos
 
@@ -17,84 +17,108 @@ Preparación (consola): el punto de operación sale con EVM sin DPD ≈ 6.1 % y 
 
 ## Parte A: anatomía de una corrida (Fig. L04-1)
 
-M3K5, µ = 0.12, 10 iteraciones.
+M3K5, µ = 0.12, 10 iteraciones. **Corrida real en MATLAB Online (2026-10-23):**
 
-- **Panel 1 (EVM y ACPR por iteración):** la iteración 0 es el sistema sin DPD. Se espera una caída fuerte en la primera actualización (EVM ≈ 6.1 → ≈ 1.9 %, ACPR ≈ −27 → ≈ −34 dBc) y luego una mejora lenta (EVM ≈ 1.3 % y ACPR ≈ −34.7 dBc en la iteración 10).
-- **Panel 2:** la potencia de salida cae ≈ 3.6 dB **en la primera actualización** y luego se mantiene. Es el efecto de igualar la potencia media y recortar el pico. El tamaño de cada actualización (‖c_nuevo − c‖) se reduce geométricamente.
-- **Panel 3 (AM/AM de toda la cadena):** sin DPD la nube se dobla; con DPD se acerca a la recta ideal. Es lo mismo que la Fig. 3(a) del paper.
-- **Panel 4:** espectros con la misma referencia (0 dB = pico del no-DPD). Los hombros bajan unos 7 dB; la meseta principal también baja un poco.
+| Iteración | EVM (%) | ACPR (dBc) | ΔPout (dB) | ‖c‖ | ‖Δc‖ |
+|---|---|---|---|---|---|
+| 0 (sin DPD) | 6.08 | −27.02 | 0 | 1.000 | 0.045 |
+| 1 | 2.14 | −33.33 | −2.85 | 0.997 | 0.040 |
+| 5 | 1.55 | −34.12 | −3.38 | 0.870 | 0.028 |
+| 10 | 1.28 | −34.37 | −3.48 | 0.770 | — |
 
-**Laboratorio:** la primera iteración hace casi todo el trabajo. Si tras la iteración 1 no ves mejora clara de EVM, revisa alineación y SNR antes de tocar el modelo.
+- **Panel 1:** casi toda la mejora llega en la primera actualización (6.1 → 2.1 %); después se afina lentamente.
+- **Panel 2:** la potencia de salida cae 2.85 dB **en la primera actualización** y se estabiliza en ≈ −3.5 dB. El tamaño de cada actualización (‖Δc‖) decrece de forma casi lineal en escala log.
+- **Panel 3 (AM/AM de toda la cadena):** sin DPD la nube se dobla por debajo de la recta a amplitud alta (|x| > 0.7); con DPD sigue la recta ideal hasta el máximo.
+- **Panel 4:** los hombros espectrales desaparecen. La meseta fuera de banda queda a ≈ −44 dB, que es el **piso de ruido** de la captura. El ACPR con DPD (≈ −34.4 dBc) está limitado por ese piso, no por el PA: sumar dos canales adyacentes de ruido blanco da ≈ −38 + 3 dB.
+- **‖c‖** baja de 1.0 a 0.77 de forma monótona: la regularización encoge los coeficientes poco a poco.
+
+**Laboratorio:**
+- La primera iteración hace casi todo el trabajo. Si tras ella no ves mejora clara de EVM, revisa alineación y SNR antes de tocar el modelo.
+- Si el ACPR con DPD se aplana, compara con el piso de ruido de tu espectro antes de culpar al modelo. En el simulador ese piso explica por completo el límite.
 
 ## Parte B: efecto de µ (Fig. L04-2)
 
-Mismo modelo, µ ∈ {1, 0.5, 0.25, 0.12, 0.06, 0.03}.
+M3K5, µ ∈ {1, 0.5, 0.25, 0.12, 0.06, 0.03}. **Corrida real, EVM en las iteraciones 1 / 5 / 10:**
 
-| µ | Comportamiento esperado (EVM iteraciones 1 → 10) |
-|---|---|
-| 1 | Explota: 17.6 → miles de % |
-| 0.5 | Sube lentamente (8.5 → ≈ 100) |
-| 0.25 | Mejora tras unas iteraciones (3.6 → 1.3) |
-| **0.12** | **Mejora suave y monótona (1.9 → 1.3)** |
-| 0.06 | Más lento (3.4 → 1.7) |
-| 0.03 | Muy lento (5.1 → 2.1) |
+| µ | 1 | 5 | 10 |
+|---|---|---|---|
+| 1 | 16.5 | >99 | >99 |
+| 0.5 | 7.6 | 10.4 | 44.5 (sube) |
+| 0.25 | 2.9 | 1.5 | 1.18 |
+| **0.12** | **2.2** | **1.55** | **1.28** |
+| 0.06 | 4.0 | 2.1 | 1.6 |
+| 0.03 | 5.4 | 2.9 | 2.2 |
 
-**Qué enseña:** hay una ventana de µ. Con µ grande, el modelo se aplica sin haber "visto" los picos expandidos (el problema de dominio de L03) y diverge. Con µ pequeño es estable pero necesita muchas iteraciones, y cada iteración en hardware cuesta tiempo. µ = 0.12 es un buen compromiso en esta simulación, aunque no demuestra que sea el óptimo en el laboratorio.
+**Qué enseña:** hay una ventana de µ. Con µ grande el modelo se aplica sin haber "visto" los picos expandidos (el problema de dominio de L03) y diverge. Con µ pequeño es estable pero necesita muchas iteraciones, y cada iteración en hardware cuesta tiempo. En esta simulación µ = 0.25 y 0.12 terminan igual (≈ 1.2 %). El de 0.25 llega antes, pero es el vecino inmediato de la zona que diverge (0.5), así que µ = 0.12 deja más margen. Es una simulación: no demuestra el óptimo del laboratorio.
 
 ## Parte C: tres modelos y la regla de selección (Fig. L04-3)
 
-Equivalente a la Fig. 4 y la Tabla II del paper. La estrella marca la iteración retenida por la regla: **entre las iteraciones cuyo ACPR está a ≤ 0.1 dB del mejor ACPR, se elige la de menor EVM** (paper, Sec. III-C).
+Equivalente a la Fig. 4 y la Tabla II del paper. La estrella marca la iteración retenida: **entre las iteraciones cuyo ACPR está a ≤ 0.1 dB del mejor ACPR, la de menor EVM** (paper, Sec. III-C).
 
-Resultados esperados (10 iteraciones, µ = 0.12, límite 1.10):
+**Corrida real (10 iteraciones, µ = 0.12, límite de pico 1.10):**
 
 | Modelo | Iteración elegida | EVM | ACPR | EVM no-DPD a igual potencia | Ganancia real |
 |---|---|---|---|---|---|
-| M1K3 | ≈ 10 | ≈ 1.3 % | ≈ −34.8 dBc | ≈ 3.3 % | ≈ +2.0 pp / 3.5 dB |
-| M3K5 | ≈ 10 | ≈ 1.3 % | ≈ −34.7 dBc | ≈ 2.6 % | ≈ +1.3 pp / 2.3 dB |
-| M5K6 | **1** | ≈ 2.6 % | ≈ −30.8 dBc | ≈ 1.9 % | **≈ −0.6 pp** |
+| M1K3 | 10 | 1.31 % | −34.4 dBc | 3.33 % | **+2.02 pp / +3.4 dB** |
+| M3K5 | 10 | 1.28 % | −34.4 dBc | 2.69 % | +1.42 pp / +2.3 dB |
+| M5K6 | 10 | 1.47 % | −33.8 dBc | 2.60 % | +1.12 pp / +1.6 dB |
 
-- **M1K3** es la que más mejora, de forma lenta y monótona.
-- **M5K6 degrada** tras la primera iteración (EVM 2.6 → 4.6 %). Es cualitativamente lo que el paper describe: "varios modelos alcanzaron el mínimo EVM en las primeras actualizaciones y luego empeoraron". En el paper M1K3 se retuvo en la iteración 1; M3K5 y M5K6 en la 4. Aquí los modelos pequeños mejoran hasta la última iteración, así que **la sim no reproduce la misma forma para todos los modelos**.
-- La barra de la derecha (**ganancia a igual potencia**) es la comparación honesta. Con el límite de pico 1.10 la potencia de salida baja 2.5–6.7 dB, y para M5K6 un simple retroceso de potencia ya da mejor EVM que el DPD.
+- Los tres terminan en un EVM de 1.3–1.5 %, **cerca del piso de ruido** de la simulación (SNR 38 dB ⇒ ≈ 1.26 %). Las diferencias están en la velocidad y en cuánta potencia se pierde.
+- **M1K3 converge lento** (EVM 5.0 % tras la 1ª iteración) pero pierde poco (−2.4 dB); M5K6 cae enseguida (−5 dB en la 1ª) y luego recupera hasta −3.7 dB.
+- **A igual potencia, el modelo pequeño gana más (+2.0 pp contra +1.1 pp).** Es coherente con la conclusión del paper (M1K3 como implementación preferida), aunque los números no son comparables con los suyos.
+- Como todos mejoran hasta la última iteración, **la regla de selección elige siempre la 10**. En el paper (6 iteraciones) la regla sí eligió iteraciones intermedias para M3K5 y M5K6; esta simulación **no reproduce ese comportamiento**.
 
-## Parte D: ¿cuándo se degrada? (Fig. L04-4)
+## Parte D: M5K6, µ y límite de pico (Fig. L04-4)
 
-M5K6, 10 iteraciones, variando µ y el límite de pico.
+M5K6, 10 iteraciones. **Corrida real:**
 
-| µ, límite | EVM (it. 1 → 10) | Potencia |
+| µ, límite de pico | EVM it. 1 → it. 10 | Potencia |
 |---|---|---|
-| 0.12, 1.10 | 2.8 → ≈ 5 (**degrada**) | −7 dB |
-| 0.06, 1.10 | 2.1 → 1.7 (mejora) | −4 dB |
-| 0.12, 1.50 | 1.9 → 1.4 (mejora) | −3 dB |
-| 0.12, 3.00 | 2.6 → 1.5 (mejora) | −3 dB |
+| 0.12, 1.10 | 2.10 → 1.49 | −3.7 dB |
+| 0.06, 1.10 | 2.67 → 1.63 | −3.6 dB |
+| 0.12, 1.50 | 2.31 → 1.31 | −3.3 dB |
+| 0.12, 3.00 | **5.27** → 1.35 | −2.7 dB |
 
-**Qué enseña:** en la simulación la degradación aparece cuando se juntan un modelo grande, un µ no pequeño y un **límite de pico que está activo**. El límite actúa como un recortador duro dentro del lazo, que el polinomio no puede invertir, y el lazo "persigue" ese error. Con µ más pequeño o con más margen de pico desaparece. Es una **hipótesis consistente con el paper** (que menciona paso adaptativo y parada por validación como trabajo futuro, y el LEEME de EXP034 propone un paso acotado), pero no está demostrada en hardware.
+**Corrección importante:** en mi primer port numérico M5K6 con µ = 0.12 y límite 1.10 *degradaba* tras la iteración 1 (2.6 → 4.6 %). **En MATLAB no se reproduce**: todas las curvas mejoran de forma monótona. Esa degradación dependía de la semilla del ruido; no es un resultado de la simulación y no debe citarse. Lo que sí se ve de forma consistente:
 
-**Laboratorio:** si un modelo degrada tras la iteración 1, mira en tus CSV de EXP010–020 si `PeakRatio_DPD_to_Original` está pegado al límite (1.10) y si `RxPower_Delta_dB` cae más de ~2 dB.
+- Sin límite de pico efectivo (3.00), la **primera** iteración es mala (5.3 %, casi no mejora): el modelo extrapola con picos que no vio. **El límite de pico actúa como protección**, a costa de bajar la potencia.
+- ‖c‖ baja monótonamente en todos los casos (0.69–0.85 tras 10 iteraciones); con el límite 1.10 y µ = 0.12 baja más rápido.
 
 ## Parte E: el lazo de EXP020 contra el del paper (Fig. L04-5)
 
-**Hallazgo al leer `code/EXP020`** (verifiqué que la misma regla está en EXP010 v2/v3 y EXP015–017; EXP012 y EXP018 no entrenan):
+**Hallazgo al leer `code/EXP020`** (verifiqué que la misma regla está en EXP010 v2/v3 y EXP015–017; EXP012 y EXP018 no entrenan). El ajuste difiere del texto del paper (Ec. 6) en **dos cosas a la vez**:
 
-- El **objetivo** del ajuste es la forma de onda original `txWaveform`, no la señal realmente transmitida `u_k`. El regresor es el RX normalizado a esa forma de onda.
-- En la **iteración 1** los coeficientes se reemplazan (`coeffCurrent = coeffHat`, sin mezcla). La mezcla con µ empieza en la iteración 2.
-- Es una regla distinta a la Ec. 6 del paper y a un ILA clásico. El LEEME de EXP031–037 dice que corrigieron justo esto ("el objetivo del postinverso es esa entrada emitida").
+1. **Objetivo:** la forma de onda *original* `txWaveform`, no la señal realmente transmitida.
+2. **Primera iteración:** reemplaza los coeficientes (`coeffCurrent = coeffHat`); la mezcla con µ empieza en la iteración 2.
 
-**Contexto:** EXP001–EXP020 son el trabajo presentado en LAMC (EXP020 es el último). Los scripts para ISCAS son EXP031–EXP037 y los que vengan después, así que esta diferencia es **historia entre dos generaciones de código**, no un error que haya que corregir en LAMC. Importa porque define qué se puede afirmar en ISCAS sobre la mejora respecto de LAMC.
+El LEEME de EXP031–037 dice que corrigieron justo el objetivo ("el objetivo del postinverso es esa entrada emitida").
 
-**Por qué importa (razonamiento, no medición):** al iterar, el cascada DPD+PA se parece cada vez más a la identidad, así que el ĉ de las iteraciones siguientes se parece a la identidad, y la mezcla con µ = 0.12 arrastra los coeficientes de vuelta hacia ella. El punto fijo es una corrección *parcial*, no la inversa del PA. Eso podría explicar que muchos modelos tengan su mejor EVM en las primeras iteraciones y luego degraden.
+**Contexto:** EXP001–EXP020 son el trabajo de LAMC; los scripts para ISCAS son DPD v3.1 y EXP031–037. Esta diferencia es **historia entre dos generaciones de código**, no un error que haya que corregir en LAMC. Importa porque define qué se puede afirmar en ISCAS sobre la mejora respecto de LAMC.
 
-**Qué muestra la simulación (M3K5, 6 iteraciones, límite 1.10):**
+**Por qué importa (razonamiento, no medición):** al iterar, la cascada DPD+PA se parece cada vez más a la identidad, así que el ĉ de las iteraciones siguientes se parece a la identidad, y la mezcla arrastra los coeficientes de vuelta hacia ella. El punto fijo sería una corrección *parcial*, no la inversa del PA.
+
+**Resultado de la corrida real (primer diseño, con los dos factores juntos), M3K5, 6 iteraciones:**
 
 | PA | Lazo clásico | Regla EXP020 |
 |---|---|---|
-| p = 1 (saturación suave) | EVM 3.5 → 2.0, mejora lenta | **mejor en la iteración 1 (≈ 0.7 %) y luego sube hasta ≈ 1.6 %** |
-| p = 2 (saturación abrupta, la del paper) | 6.1 → 1.7 → 1.3 | explota en la iteración 1 (EVM ≈ 18 %, potencia −16 dB) |
+| p = 2 (el que reproduce el EVM de 6.47 %) | 6.07 → 2.19 → … → 1.47 | explota en la iteración 1: EVM ≈ 17 %, potencia −13.9 dB |
+| p = 1 (saturación suave) | 3.44 → 3.15 → … → 1.98 | **mejor en la iteración 1 (0.83 %), luego sube a 1.63 %** |
 
-- Con el PA suave, la regla de EXP020 reproduce justo el patrón "mínimo en las primeras actualizaciones y luego degrada".
-- Con el PA abrupto (el que mejor reproduce el EVM de 6.47 % del paper) explotaría en la iteración 1, y eso **no** pasó en el laboratorio, donde esa iteración funcionó. Por lo tanto el PA simulado no es el del laboratorio, y esta parte no confirma nada sobre el hardware.
+- Con el PA suave, la regla de EXP020 muestra el patrón "mínimo en las primeras actualizaciones y luego degrada" que el paper describe.
+- Con el PA abrupto explotaría en la iteración 1, y eso **no** pasó en el laboratorio. Por eso el PA simulado no es el del laboratorio y esto **no confirma nada sobre el hardware**.
 
-**Cómo comprobarlo con datos reales (sin hardware nuevo):** en los CSV de coeficientes de EXP010–020, mira para un modelo `‖c‖` y `‖c_i − c_{i−1}‖` por iteración. La regla de EXP020 predice que `c` cambia mucho de la iteración 1 a la 2 y que después los cambios decaen geométricamente (≈ ×0.88 por iteración); un ILA clásico predice cambios mucho más pequeños y regulares desde el principio. Si coincide con la regla de EXP020, tendría un argumento sólido para el ISCAS: la comparación entre mezcla fija y paso acotado debe hacerse con el objetivo corregido (como en EXP031–037) para no mezclar efectos.
+**Limitación que descubrí al revisarlo:** esa comparación mezclaba los dos factores, así que no decía cuál causa qué. El script ahora corre un **diseño 2×2** (objetivo emitido u original, por primera iteración reemplazada o mezclada). En el port numérico (otra semilla; la corrida en MATLAB debe confirmarlo) salió:
+
+| EVM (%) tras 10 iteraciones | 1ª iteración mezclada | 1ª iteración reemplaza |
+|---|---|---|
+| PA suave (p = 1), objetivo emitido | 1.43 (lento) | **0.90** (rápido y estable) |
+| PA suave (p = 1), objetivo original | 2.12 (se estanca) | 1.88 (sube desde 0.83) |
+| PA abrupto (p = 2), objetivo emitido | 1.32 | explota (18 %) |
+| PA abrupto (p = 2), objetivo original | 2.01 (sube tras la it. 2) | explota (18 %) |
+
+Lectura: **los dos factores importan.** El reemplazo completo en la iteración 1 da el salto rápido (pero puede explotar con un PA abrupto). El objetivo original produce el deterioro posterior y un EVM final peor en todos los casos donde el lazo no explota. Si la corrida real de MATLAB lo confirma, un diseño con objetivo emitido y primera actualización completa sería el más rápido y estable en el PA suave.
+
+**Cómo comprobarlo con datos reales (sin hardware nuevo):** en los CSV de coeficientes de EXP010–020 mira para un modelo `‖c‖` y `‖c_i − c_{i−1}‖` por iteración. La regla de EXP020 predice un cambio grande entre las iteraciones 1 y 2, y luego cambios que decaen geométricamente (≈ ×0.88 por iteración).
 
 ## Resumen de diagnóstico
 
@@ -102,9 +126,9 @@ M5K6, 10 iteraciones, variando µ y el límite de pico.
 |---|---|---|
 | El EVM sube con cada iteración desde el principio | µ demasiado grande | Reducir µ (0.12 → 0.06) |
 | La mejora es muy lenta | µ pequeño | Más iteraciones o µ algo mayor |
-| Mejor iteración = 1 y luego empeora | Límite de pico activo, regla de actualización, ruido | Revisa `PeakRatio` y `RxPower_Delta_dB`; compara con el lazo corregido |
+| Mejor iteración = 1 y luego empeora | Objetivo de ajuste original en vez de la señal emitida (ver Parte E); también ruido | Revisa `‖c‖` y `‖Δc‖` por iteración; compara con el lazo corregido |
 | `RxPower_Delta_dB` baja > 2 dB | Igualación de potencia + límite de pico | Comparar siempre a igual potencia |
-| Modelo grande peor que el pequeño | Limitado por ruido, o degradación en el lazo | Mirar L03 (SNR) y la Parte D |
+| Modelo grande peor que el pequeño | Limitado por ruido, o más retroceso de potencia | Mirar L03 (SNR) y comparar a igual potencia |
 
 ## Referencias
 

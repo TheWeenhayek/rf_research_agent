@@ -17,10 +17,10 @@
 %  PART B  effect of mu (stable, slow, divergent)
 %  PART C  three models (paper Fig. 4 / Table II) + the EVM-ACPR selection
 %          rule + the equal-power check (preview of L06)
-%  PART D  when does a model degrade after the first iterations?
-%  PART E  the loop of code/EXP020 is NOT the loop of the paper text
-%          (target = original waveform, iteration 1 not blended). HYPOTHESIS
-%          explored in simulation only; to be checked with real iteration data.
+%  PART D  M5K6: effect of mu and of the peak limit (does it degrade?)
+%  PART E  the loop of code/EXP020 is NOT the loop of the paper text: target =
+%          original waveform AND iteration 1 not blended. 2x2 design that
+%          separates the two. Simulation only; to be checked with real data.
 %% ========================================================================
 
 clear; close all; clc;
@@ -145,25 +145,28 @@ end
 Tdeg = vertcat(cellD{:});
 figure('Name','L04-4 Degradation','Position',[40 40 1250 450]);
 subplot(1,2,1); plot(0:nIter, Dev', 'o-', 'LineWidth', 1.2); grid on; xlabel('Iteration'); ylabel('EVM (%)');
-legend(arrayfun(@(i) sprintf('\\mu %.2f, limit %.2f', cases(i,1), cases(i,2)), 1:size(cases,1), 'UniformOutput', false), 'Location', 'best'); title('M5K6: degradation depends on mu and on the peak limit');
+legend(arrayfun(@(i) sprintf('\\mu %.2f, limit %.2f', cases(i,1), cases(i,2)), 1:size(cases,1), 'UniformOutput', false), 'Location', 'best'); title('M5K6: effect of mu and of the peak limit');
 subplot(1,2,2); plot(0:nIter, Ddc', 'o-', 'LineWidth', 1.2); grid on; xlabel('Iteration'); ylabel('||c||'); title('Coefficient norm');
 
-%% PART E: the EXP020 loop versus the loop of the paper text ------------
-fprintf('\nPART E (hypothesis, simulation only): EXP020 update rule vs classic ILA, M3K5, 6 iterations\n');
-fprintf('  EXP020: target = ORIGINAL waveform, regressor = RX normalized to it, iteration 1 NOT blended (c = c_hat), then blend with mu.\n');
-fprintf('  Classic: target = the waveform actually transmitted, every iteration blended.\n');
+%% PART E: target and first update, separated (2x2) --------------------
+fprintf('\nPART E (simulation only): EXP020 update rule vs the loop of the paper text, M3K5, 6 iterations\n');
+fprintf('  Two things differ in code/EXP020: (1) the fit TARGET is the original waveform, not the one really transmitted;\n');
+fprintf('  (2) iteration 1 REPLACES the coefficients (c = c_hat) and blending starts at iteration 2. 2x2 design:\n');
 pa1 = @(u) paFun(u, 1); drive1 = calibrateDrive(x, pa1, targetC); xd1 = x*drive1;
 noiseAmp1 = sqrt(mean(abs(pa1(xd1)).^2)) * 10^(-snrObs/20);
 paList = {pa2, pa1}; xdList = {xd2, xd1}; nzList = [noiseAmp2 noiseAmp1]; pName = {'p = 2 (sharp saturation, EVM(no DPD) like the paper)', 'p = 1 (soft saturation)'};
-figure('Name','L04-5 EXP020 vs classic','Position',[40 40 1250 450]); cellE = cell(4,1);
+modes = {'classic', 'emitted_full', 'original_blend', 'legacy'};
+modeName = {'emitted target, blend from it. 1 (classic)', 'emitted target, it. 1 replaces', 'original target, blend from it. 1', 'original target, it. 1 replaces (EXP020)'};
+figure('Name','L04-5 EXP020 vs classic','Position',[40 40 1250 450]); cellE = cell(8,1);
 for q = 1:2
-    Rc = runILA(x, xdList{q}, paList{q}, 3, 5, muPaper, lamRel, nzList(q), 6, capLab, 'classic', minAmpRatio, nRowsMax, cfg);
-    Rl = runILA(x, xdList{q}, paList{q}, 3, 5, muPaper, lamRel, nzList(q), 6, capLab, 'legacy', minAmpRatio, nRowsMax, cfg);
-    fprintf('  %s\n    classic EVM: %s\n    EXP020  EVM: %s\n    EXP020  dPout: %s\n', pName{q}, sprintf('%7.2f', Rc.T.EVM), sprintf('%7.2f', Rl.T.EVM), sprintf('%7.1f', Rl.T.dP));
-    subplot(1,2,q); plot(0:6, min(Rc.T.EVM, 60), 'o-', 0:6, min(Rl.T.EVM, 60), 's-', 'LineWidth', 1.3); grid on; xlabel('Iteration'); ylabel('EVM (%)');
-    legend('classic ILA', 'EXP020 rule', 'Location', 'best'); title(pName{q});
-    Tc = Rc.T; Tc.Rule = repmat("classic", height(Tc), 1); Tc.PA = repmat(q, height(Tc), 1);
-    Tl = Rl.T; Tl.Rule = repmat("EXP020", height(Tl), 1); Tl.PA = repmat(q, height(Tl), 1); cellE{2*q-1} = Tc; cellE{2*q} = Tl;
+    subplot(1,2,q); hold on; fprintf('  %s\n', pName{q});
+    for k = 1:4
+        Rk = runILA(x, xdList{q}, paList{q}, 3, 5, muPaper, lamRel, nzList(q), 6, capLab, modes{k}, minAmpRatio, nRowsMax, cfg);
+        fprintf('    %-45s EVM: %s\n', modeName{k}, sprintf('%7.2f', Rk.T.EVM));
+        plot(0:6, min(Rk.T.EVM, 20), 'o-', 'LineWidth', 1.3);
+        Tk = Rk.T; Tk.Rule = repmat(string(modes{k}), height(Tk), 1); Tk.PA = repmat(q, height(Tk), 1); cellE{4*(q-1)+k} = Tk;
+    end
+    grid on; xlabel('Iteration'); ylabel('EVM (%)'); legend(modeName, 'Location', 'best', 'FontSize', 8); title(pName{q});
 end
 
 %% 7. Save ---------------------------------------------------------------
@@ -190,15 +193,17 @@ function R = runILA(x, xd, pa, M, K, mu, lamRel, noiseAmp, nIter, cap, mode, min
         Pm(it+1) = 10*log10(mean(abs(yo).^2)); CNorm(it+1) = norm(c); peak(it+1) = max(abs(u))/max(abs(xd));
         if it == 0, R.y0 = yo; end
         if it == nIter, R.yN = yo; break; end
-        switch mode
-            case 'classic'
-                G = (xd'*yo)/(xd'*xd); yn = yo/G;
-                ch = fitPost(yn, u, M, K, lamRel, minAmpRatio, nRowsMax); cNew = (1-mu)*c + mu*ch;
-            case 'legacy'
-                a = (yo'*xd)/(yo'*yo); yn = a*yo;
-                ch = fitPost(yn, xd, M, K, lamRel, minAmpRatio, nRowsMax);
-                if it == 0, cNew = ch; else, cNew = (1-mu)*c + mu*ch; end
+        % mode: 'classic' = emitted target, all blended; 'legacy' = EXP020 (original target, iteration 1 replaces);
+        %       'emitted_full' / 'original_blend' = the two mixed cases (2x2 design of Part E)
+        origTarget = any(strcmp(mode, {'legacy', 'original_blend'}));
+        firstFull  = any(strcmp(mode, {'legacy', 'emitted_full'}));
+        if origTarget
+            a = (yo'*xd)/(yo'*yo); yn = a*yo; target = xd;      % normalizeRxToTx of EXP020
+        else
+            G = (xd'*yo)/(xd'*xd); yn = yo/G; target = u;       % post-inverse of what was really transmitted
         end
+        ch = fitPost(yn, target, M, K, lamRel, minAmpRatio, nRowsMax);
+        if it == 0 && firstFull, cNew = ch; else, cNew = (1-mu)*c + mu*ch; end
         dC(it+1) = norm(cNew - c); c = cNew;
         u = normalizeDPD(applyMP(xd, c, M, K), xd, cap);
     end
