@@ -33,7 +33,8 @@ outDir = fullfile(scriptDir, 'out', moduleName);
 figDir = fullfile(outDir, 'figures');
 if ~exist(figDir, 'dir'), mkdir(figDir); end
 delete(fullfile(figDir, '*.png'));
-diary off; diary(fullfile(outDir, 'console.txt'));
+diary off; if exist(fullfile(outDir, 'console.txt'), 'file'), delete(fullfile(outDir, 'console.txt')); end   % diary appends: start clean
+diary(fullfile(outDir, 'console.txt'));
 fprintf('%s run: %s  (MATLAB %s)\n\n', moduleName, datestr(now,'yyyy-mm-dd HH:MM:SS'), version);
 
 %% 0. Configuration ------------------------------------------------------

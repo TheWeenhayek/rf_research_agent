@@ -3,7 +3,7 @@
 Script: `sim/learn/L04_ILA_loop_blending_and_selection.m`. Salidas en `sim/learn/out/L04/`.
 Corresponde a la Ec. 6, la Fig. 4 y la Tabla II del paper, y al lazo de `code/EXP010–EXP020`.
 
-Los números de las Partes A–D son de la corrida real en MATLAB Online (2026-10-23). Los del diseño 2×2 de la Parte E vienen de un port numérico con otra semilla, pendientes de confirmar con una nueva corrida del script.
+Los números son de las corridas reales en MATLAB Online (2026-10-23 y 2026-10-24).
 
 ## El lazo en cinco pasos
 
@@ -107,16 +107,20 @@ El LEEME de EXP031–037 dice que corrigieron justo el objetivo ("el objetivo de
 - Con el PA suave, la regla de EXP020 muestra el patrón "mínimo en las primeras actualizaciones y luego degrada" que el paper describe.
 - Con el PA abrupto explotaría en la iteración 1, y eso **no** pasó en el laboratorio. Por eso el PA simulado no es el del laboratorio y esto **no confirma nada sobre el hardware**.
 
-**Limitación que descubrí al revisarlo:** esa comparación mezclaba los dos factores, así que no decía cuál causa qué. El script ahora corre un **diseño 2×2** (objetivo emitido u original, por primera iteración reemplazada o mezclada). En el port numérico (otra semilla; la corrida en MATLAB debe confirmarlo) salió:
+**Limitación que descubrí al revisarlo:** esa comparación mezclaba los dos factores, así que no decía cuál causa qué. El script ahora corre un **diseño 2×2** (objetivo emitido u original, por primera iteración reemplazada o mezclada). **Corrida real en MATLAB Online (EVM %, iteración 6, M3K5):**
 
-| EVM (%) tras 10 iteraciones | 1ª iteración mezclada | 1ª iteración reemplaza |
+| Caso | 1ª iteración mezclada | 1ª iteración reemplaza |
 |---|---|---|
-| PA suave (p = 1), objetivo emitido | 1.43 (lento) | **0.90** (rápido y estable) |
-| PA suave (p = 1), objetivo original | 2.12 (se estanca) | 1.88 (sube desde 0.83) |
-| PA abrupto (p = 2), objetivo emitido | 1.32 | explota (18 %) |
-| PA abrupto (p = 2), objetivo original | 2.01 (sube tras la it. 2) | explota (18 %) |
+| PA suave (p = 1), objetivo emitido | 1.98 (lento, aún bajando) | **0.88** (0.83 → 0.88: rápido y estable) |
+| PA suave (p = 1), objetivo original | 2.38 (más lento y se estanca) | 1.63 (**0.83 → 1.63: sube**) |
+| PA abrupto (p = 2), objetivo emitido | **1.47** (sigue mejorando) | explota (16.5 %) |
+| PA abrupto (p = 2), objetivo original | 2.13 (plano en ≈ 2.1–2.2) | explota (16.8 %) |
 
-Lectura: **los dos factores importan.** El reemplazo completo en la iteración 1 da el salto rápido (pero puede explotar con un PA abrupto). El objetivo original produce el deterioro posterior y un EVM final peor en todos los casos donde el lazo no explota. Si la corrida real de MATLAB lo confirma, un diseño con objetivo emitido y primera actualización completa sería el más rápido y estable en el PA suave.
+Lectura (simulación; el PA no es el del laboratorio):
+
+- **Reemplazar en la iteración 1** da el salto rápido (0.83 % en una sola actualización con el PA suave), pero con el PA abrupto explota con cualquier objetivo.
+- **El objetivo original** produce el deterioro posterior: con reemplazo, el EVM sube de 0.83 a 1.63 en 5 iteraciones; con mezcla, se queda en un nivel peor (2.1 y 2.4 %) que el del objetivo emitido (1.5 y 2.0 %, que además sigue bajando).
+- La mejor combinación en el PA suave es **objetivo emitido con primera actualización completa**: rápido y sin deriva. Es una observación de simulación, no una receta para el hardware.
 
 **Cómo comprobarlo con datos reales (sin hardware nuevo):** en los CSV de coeficientes de EXP010–020 mira para un modelo `‖c‖` y `‖c_i − c_{i−1}‖` por iteración. La regla de EXP020 predice un cambio grande entre las iteraciones 1 y 2, y luego cambios que decaen geométricamente (≈ ×0.88 por iteración).
 
